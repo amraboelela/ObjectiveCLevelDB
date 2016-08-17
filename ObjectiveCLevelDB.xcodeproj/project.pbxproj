@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C8B23A31D6511630087AD72 /* LevelDB.m in Sources */ = {isa = PBXBuildFile; fileRef = 0CCFB2F31D650A5B0079BD61 /* LevelDB.m */; };
+		0C8B23A51D6513BD0087AD72 /* LevelDB.m in Sources */ = {isa = PBXBuildFile; fileRef = 0CCFB2F31D650A5B0079BD61 /* LevelDB.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -124,7 +124,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C8B23A31D6511630087AD72 /* LevelDB.m in Sources */,
+				0C8B23A51D6513BD0087AD72 /* LevelDB.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
