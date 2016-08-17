@@ -11,21 +11,18 @@
 #import "LDBWriteBatch.h"
 #include "Common.h"
 
-@interface LDBWritebatch () {
-    leveldb::WriteBatch _writeBatch;
-    id _db;
-}
+static leveldb::WriteBatch _writeBatch;
+
+@interface LDBWritebatch () 
 
 @property (readonly) leveldb::WriteBatch writeBatch;
 
 @end
 
-@implementation LDBWritebatch {
-    dispatch_queue_t _serial_queue;
-}
+@implementation LDBWritebatch
 
-@synthesize writeBatch = _writeBatch;
 @synthesize db = _db;
+@dynamic writeBatch;
 
 + (instancetype) writeBatchFromDB:(id)db {
     id wb = [[[self alloc] init] autorelease];
@@ -40,10 +37,11 @@
     }
     return self;
 }
+
 - (void)dealloc {
     if (_serial_queue) {
         dispatch_release(_serial_queue);
-        _serial_queue = nil;
+        _serial_queue = NULL;
     }
     if (_db) {
         [_db release];
@@ -52,6 +50,14 @@
     [super dealloc];
 }
 
+#pragma mark - Accessors
+
+- (leveldb::WriteBatch)writeBatch {
+    return _writeBatch;
+}
+
+#pragma mark - Public methods
+
 - (void) removeObjectForKey:(id)key {
     AssertKeyType(key);
     leveldb::Slice k = KeyFromStringOrData(key);
@@ -59,11 +65,13 @@
         _writeBatch.Delete(k);
     });
 }
+
 - (void) removeObjectsForKeys:(NSArray *)keyArray {
     [keyArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
         [self removeObjectForKey:obj];
     }];
 }
+
 - (void) removeAllObjects {
     [_db enumerateKeysUsingBlock:^(LevelDBKey *key, BOOL *stop) {
         [self removeObjectForKey:NSDataFromLevelDBKey(key)];
@@ -103,6 +111,7 @@
 
 - (void) apply {
     [_db applyWritebatch:self];
+    _writeBatch.Clear();
 }
 
 @end

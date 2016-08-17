@@ -5,11 +5,14 @@
 //  See LICENCE for details.
 //
 
+#import <dispatch/dispatch.h>
 #import <Foundation/Foundation.h>
-
 #import "LevelDB.h"
 
-@interface LDBWritebatch : NSObject
+@interface LDBWritebatch : NSObject {
+    id _db;
+    dispatch_queue_t _serial_queue;
+}
 
 @property (nonatomic, assign) id db;
 

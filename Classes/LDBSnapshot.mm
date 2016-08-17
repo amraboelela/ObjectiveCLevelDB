@@ -35,9 +35,7 @@
 
 @end
 
-@interface LDBSnapshot () {
-    const leveldb::Snapshot * _snapshot;
-}
+@interface LDBSnapshot ()
 
 @property (readonly, getter = getSnapshot) const leveldb::Snapshot * snapshot;
 - (const leveldb::Snapshot *) getSnapshot;
@@ -45,6 +43,8 @@
 @end
 
 @implementation LDBSnapshot 
+
+@synthesize db = _db;
 
 + (LDBSnapshot *) snapshotFromDB:(LevelDB *)database {
     LDBSnapshot *snapshot = [[[LDBSnapshot alloc] init] autorelease];
@@ -54,7 +54,7 @@
 }
 
 - (const leveldb::Snapshot *) getSnapshot {
-    return _snapshot;
+    return (const leveldb::Snapshot *)_snapshot;
 }
 
 - (id) objectForKey:(id)key {
@@ -71,7 +71,8 @@
     [keys enumerateObjectsUsingBlock:^(id objId, NSUInteger idx, BOOL *stop) {
         id object = [self objectForKey:objId];
         if (object == nil) object = marker;
-        result[idx] = object;
+        [result replaceObjectAtIndex:idx withObject:object];
+        //result[idx] = object;
     }];
     return [NSArray arrayWithArray:result];
 }
@@ -164,7 +165,7 @@
 
 - (void) close {
     if (_snapshot && _db && ![_db closed]) {
-        [_db db]->ReleaseSnapshot(_snapshot);
+        [_db db]->ReleaseSnapshot((const leveldb::Snapshot *)_snapshot);
         _snapshot = nil;
     }
 }

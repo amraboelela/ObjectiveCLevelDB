@@ -1,7 +1,11 @@
 //
 //  LevelDB.m
 //
-//  Copyright 2011 Pave Labs. All rights reserved. 
+//  Copyright 2011-2016 Pave Labs. All rights reserved.
+//
+//  Modified by: Amr Aboelela <amraboelela@gmail.com>
+//  Date: Aug 2016
+//
 //  See LICENCE for details.
 //
 
@@ -18,28 +22,28 @@
 #include "Common.h"
 
 #define MaybeAddSnapshotToOptions(_from_, _to_, _snap_) \
-    leveldb::ReadOptions __to_;\
-    leveldb::ReadOptions * _to_ = &__to_;\
-    if (_snap_ != nil) { \
-        _to_->fill_cache = _from_.fill_cache; \
-        _to_->snapshot = [_snap_ getSnapshot]; \
-    } else \
-        _to_ = &_from_;
+leveldb::ReadOptions __to_;\
+leveldb::ReadOptions * _to_ = &__to_;\
+if (_snap_ != nil) { \
+_to_->fill_cache = _from_.fill_cache; \
+_to_->snapshot = [_snap_ getSnapshot]; \
+} else \
+_to_ = &_from_;
 
 #define SeekToFirstOrKey(iter, key, _backward_) \
-    (key != nil) ? iter->Seek(KeyFromStringOrData(key)) : \
-    _backward_ ? iter->SeekToLast() : iter->SeekToFirst()
+(key != nil) ? iter->Seek(KeyFromStringOrData(key)) : \
+_backward_ ? iter->SeekToLast() : iter->SeekToFirst()
 
 #define MoveCursor(_iter_, _backward_) \
-    _backward_ ? iter->Prev() : iter->Next()
+_backward_ ? iter->Prev() : iter->Next()
 
 #define EnsureNSData(_obj_) \
-    ([_obj_ isKindOfClass:[NSData class]]) ? _obj_ : \
-    ([_obj_ isKindOfClass:[NSString class]]) ? [NSData dataWithBytes:[_obj_ cStringUsingEncoding:NSUTF8StringEncoding] \
-                                                              length:[_obj_ lengthOfBytesUsingEncoding:NSUTF8StringEncoding]] : nil
+([_obj_ isKindOfClass:[NSData class]]) ? _obj_ : \
+([_obj_ isKindOfClass:[NSString class]]) ? [NSData dataWithBytes:[_obj_ cStringUsingEncoding:NSUTF8StringEncoding] \
+length:[_obj_ lengthOfBytesUsingEncoding:NSUTF8StringEncoding]] : nil
 
 #define AssertDBExists(_db_) \
-    NSAssert(_db_ != NULL, @"Database reference is not existent (it has probably been closed)");
+NSAssert(_db_ != NULL, @"Database reference is not existent (it has probably been closed)");
 
 namespace {
     class BatchIterator : public leveldb::WriteBatch::Handler {
@@ -71,8 +75,8 @@ int lockOrUnlock(int fd, bool lock) {
 
 NSString *NSStringFromLevelDBKey(LevelDBKey * key) {
     return [[[NSString alloc] initWithBytes:key->data
-                                    length:key->length
-                                  encoding:NSUTF8StringEncoding] autorelease];
+                                     length:key->length
+                                   encoding:NSUTF8StringEncoding] autorelease];
 }
 NSData   *NSDataFromLevelDBKey(LevelDBKey * key) {
     return [NSData dataWithBytes:key->data length:key->length];
@@ -106,7 +110,7 @@ LevelDBOptions MakeLevelDBOptions() {
 static leveldb::ReadOptions readOptions;
 static leveldb::WriteOptions writeOptions;
 
-@interface LevelDB () 
+@interface LevelDB ()
 
 @property (nonatomic, readonly) leveldb::DB * db;
 
@@ -166,7 +170,7 @@ static leveldb::WriteOptions writeOptions;
             filterPolicy = (void *)leveldb::NewBloomFilterPolicy(opts.filterPolicy);
             options.filter_policy = (const leveldb::FilterPolicy *)filterPolicy;
         }
-            
+        
         leveldb::Status status = leveldb::DB::Open(options, [_path UTF8String], (leveldb::DB **)&db);
         
         readOptions.fill_cache = true;
@@ -253,7 +257,7 @@ static leveldb::WriteOptions writeOptions;
     
     leveldb::Slice k = KeyFromStringOrData(key);
     LevelDBKey lkey = GenericKeyFromSlice(k);
-
+    
     NSData *data = _encoder(&lkey, value);
     leveldb::Slice v = SliceFromData(data);
     
@@ -399,7 +403,7 @@ static leveldb::WriteOptions writeOptions;
         prefixPtr = [(NSData *)prefix bytes];
         prefixLen = (size_t)[(NSData *)prefix length];
     }
-
+    
     for (SeekToFirstOrKey(iter, (id)prefix, NO)
          ; iter->Valid()
          ; MoveCursor(iter, NO)) {
@@ -566,13 +570,13 @@ static leveldb::WriteOptions writeOptions;
     NSData *prefixData = EnsureNSData(prefix);
     
     LevelDBKeyValueBlock iterate = (predicate != nil)
-        ? ^(LevelDBKey *lk, id value, BOOL *stop) {
-            if ([predicate evaluateWithObject:value])
-                block(lk, stop);
-          }
-        : ^(LevelDBKey *lk, id value, BOOL *stop) {
+    ? ^(LevelDBKey *lk, id value, BOOL *stop) {
+        if ([predicate evaluateWithObject:value])
             block(lk, stop);
-          };
+    }
+    : ^(LevelDBKey *lk, id value, BOOL *stop) {
+        block(lk, stop);
+    };
     
     for ([self _startIterator:iter backward:backward prefix:prefix start:key]
          ; iter->Valid()
@@ -633,27 +637,27 @@ static leveldb::WriteOptions writeOptions;
     
     LevelDBLazyKeyValueBlock iterate = (predicate != nil)
     
-        // If there is a predicate:
-        ? ^ (LevelDBKey *lk, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
-            // We need to get the value, whether the `lazily` flag was set or not
-            id value = valueGetter();
-            
-            // If the predicate yields positive, we call the block
-            if ([predicate evaluateWithObject:value]) {
-                if (lazily)
-                    ((LevelDBLazyKeyValueBlock)block)(lk, valueGetter, stop);
-                else
-                    ((LevelDBKeyValueBlock)block)(lk, value, stop);
-            }
-        }
-    
-        // Otherwise, we call the block
-        : ^ (LevelDBKey *lk, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
+    // If there is a predicate:
+    ? ^ (LevelDBKey *lk, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
+        // We need to get the value, whether the `lazily` flag was set or not
+        id value = valueGetter();
+        
+        // If the predicate yields positive, we call the block
+        if ([predicate evaluateWithObject:value]) {
             if (lazily)
                 ((LevelDBLazyKeyValueBlock)block)(lk, valueGetter, stop);
             else
-                ((LevelDBKeyValueBlock)block)(lk, valueGetter(), stop);
-        };
+                ((LevelDBKeyValueBlock)block)(lk, value, stop);
+        }
+    }
+    
+    // Otherwise, we call the block
+    : ^ (LevelDBKey *lk, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
+        if (lazily)
+            ((LevelDBLazyKeyValueBlock)block)(lk, valueGetter, stop);
+        else
+            ((LevelDBKeyValueBlock)block)(lk, valueGetter(), stop);
+    };
     
     NSData *prefixData = EnsureNSData(prefix);
     

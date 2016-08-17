@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0CFE5A7C1D650743005756D9 /* LevelDB.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0CFE5A791D650743005756D9 /* LevelDB.mm */; };
+		0C8B23A21D6510FA0087AD72 /* LevelDB.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0CCFB2F51D650B190079BD61 /* LevelDB.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,10 +23,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0CCFB2F31D650A5B0079BD61 /* LevelDB.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = LevelDB.m; path = Classes/LevelDB.m; sourceTree = "<group>"; };
+		0CCFB2F51D650B190079BD61 /* LevelDB.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LevelDB.mm; path = Classes/LevelDB.mm; sourceTree = "<group>"; };
 		0CFE5A661D6506B0005756D9 /* libObjectiveCLevelDB.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libObjectiveCLevelDB.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		0CFE5A731D650743005756D9 /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.h; path = Classes/Common.h; sourceTree = "<group>"; };
 		0CFE5A781D650743005756D9 /* LevelDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LevelDB.h; path = Classes/LevelDB.h; sourceTree = "<group>"; };
-		0CFE5A791D650743005756D9 /* LevelDB.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LevelDB.mm; path = Classes/LevelDB.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,7 +62,8 @@
 			children = (
 				0CFE5A731D650743005756D9 /* Common.h */,
 				0CFE5A781D650743005756D9 /* LevelDB.h */,
-				0CFE5A791D650743005756D9 /* LevelDB.mm */,
+				0CCFB2F31D650A5B0079BD61 /* LevelDB.m */,
+				0CCFB2F51D650B190079BD61 /* LevelDB.mm */,
 			);
 			name = Classes;
 			sourceTree = "<group>";
@@ -122,7 +124,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0CFE5A7C1D650743005756D9 /* LevelDB.mm in Sources */,
+				0C8B23A21D6510FA0087AD72 /* LevelDB.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -44,14 +44,24 @@ FOUNDATION_EXPORT NSString * const kLevelDBChangeKey;
 extern "C" {
 #endif
     
-NSString * NSStringFromLevelDBKey(LevelDBKey * key);
-NSData   * NSDataFromLevelDBKey  (LevelDBKey * key);
-
+int lockOrUnlock(int fd, bool lock);
+NSString *NSStringFromLevelDBKey(LevelDBKey * key);
+NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
+NSString *getLibraryPath();
+    
 #ifdef __cplusplus
 }
 #endif
 
-@interface LevelDB : NSObject
+@interface LevelDB : NSObject {
+    NSString *_path;
+    NSString *_name;
+    LevelDBEncoderBlock _encoder;
+    LevelDBDecoderBlock _decoder;
+    void *db; // leveldb::DB
+    void *cache; // const leveldb::Cache
+    void *filterPolicy; // const leveldb::FilterPolicy
+}
 
 ///------------------------------------------------------------------------
 /// @name A LevelDB object, used to query to the database instance on disk
@@ -291,7 +301,7 @@ NSData   * NSDataFromLevelDBKey  (LevelDBKey * key);
 /**
  Enumerate over the keys in the database, in order.
  
- Same as `[self enumerateKeysBackward:FALSE startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
+ Same as `[self enumerateKeysBackward:false startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
  
  @param block The enumeration block used when iterating over all the keys.
  */
@@ -316,7 +326,7 @@ NSData   * NSDataFromLevelDBKey  (LevelDBKey * key);
 /**
  Enumerate over the key value pairs in the database, in order.
  
- Same as `[self enumerateKeysAndObjectsBackward:FALSE startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
+ Same as `[self enumerateKeysAndObjectsBackward:false startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
  
  @param block The enumeration block used when iterating over all the key value pairs.
  */

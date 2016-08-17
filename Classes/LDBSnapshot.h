@@ -10,7 +10,10 @@
 
 @class LevelDB;
 
-@interface LDBSnapshot : NSObject 
+@interface LDBSnapshot : NSObject {
+    const void *_snapshot; //leveldb::Snapshot
+    LevelDB *_db;
+}
 
 @property (nonatomic, readonly, assign) LevelDB * db;
 
@@ -75,7 +78,7 @@
 /**
  Enumerate over the keys in the database, in order.
  
- Same as `[self enumerateKeysBackward:FALSE startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
+ Same as `[self enumerateKeysBackward:false startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
  
  @param block The enumeration block used when iterating over all the keys.
  */
@@ -99,7 +102,7 @@
 /**
  Enumerate over the key value pairs in the database, in order.
  
- Same as `[self enumerateKeysAndObjectsBackward:FALSE startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
+ Same as `[self enumerateKeysAndObjectsBackward:false startingAtKey:nil filteredByPredicate:nil andPrefix:nil usingBlock:block]`
  
  @param block The enumeration block used when iterating over all the key value pairs.
  */
