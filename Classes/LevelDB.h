@@ -20,19 +20,21 @@ typedef struct LevelDBOptions {
     size_t cacheSize;
 } LevelDBOptions;
 
+/*
 typedef struct {
-    const char * data;
-    NSUInteger   length;
+    const char *data;
+    NSUInteger length;
 } LevelDBKey;
+*/
 
-typedef NSData * (^LevelDBEncoderBlock) (LevelDBKey * key, id object);
-typedef id       (^LevelDBDecoderBlock) (LevelDBKey * key, id data);
+typedef NSData * (^LevelDBEncoderBlock) (NSString *key, id object);
+typedef id       (^LevelDBDecoderBlock) (NSString *key, id data);
 
-typedef void     (^LevelDBKeyBlock)     (LevelDBKey * key, BOOL *stop);
-typedef void     (^LevelDBKeyValueBlock)(LevelDBKey * key, id value, BOOL *stop);
+typedef void     (^LevelDBKeyBlock)     (NSString *key, BOOL *stop);
+typedef void     (^LevelDBKeyValueBlock)(NSString *key, id value, BOOL *stop);
 
 typedef id       (^LevelDBValueGetterBlock)  (void);
-typedef void     (^LevelDBLazyKeyValueBlock) (LevelDBKey * key, LevelDBValueGetterBlock lazyValue, BOOL *stop);
+typedef void     (^LevelDBLazyKeyValueBlock) (NSString *key, LevelDBValueGetterBlock lazyValue, BOOL *stop);
 
 FOUNDATION_EXPORT NSString * const kLevelDBChangeType;
 FOUNDATION_EXPORT NSString * const kLevelDBChangeTypePut;
@@ -45,8 +47,8 @@ extern "C" {
 #endif
     
 int lockOrUnlock(int fd, bool lock);
-NSString *NSStringFromLevelDBKey(LevelDBKey * key);
-NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
+//NSString *NSStringFromLevelDBKey(LevelDBKey * key);
+//NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
 NSString *getLibraryPath();
     
 #ifdef __cplusplus

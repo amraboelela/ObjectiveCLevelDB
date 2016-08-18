@@ -63,6 +63,7 @@ NSAssert(_db_ != NULL, @"Database reference is not existent (it has probably bee
 
 #pragma mark - Public functions
 
+/*
 int lockOrUnlock(int fd, bool lock) {
     errno = 0;
     struct flock f;
@@ -81,7 +82,7 @@ NSString *NSStringFromLevelDBKey(LevelDBKey * key) {
 }
 NSData   *NSDataFromLevelDBKey(LevelDBKey * key) {
     return [NSData dataWithBytes:key->data length:key->length];
-}
+}*/
 
 NSString *getLibraryPath() {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
@@ -207,7 +208,7 @@ static leveldb::WriteOptions writeOptions;
             }
         }*/
         
-        self.encoder = ^ NSData *(LevelDBKey *key, id object) {
+        self.encoder = ^ NSData *(NSString *key, id object) {
 #ifdef DEBUG
             static dispatch_once_t onceToken;
             dispatch_once(&onceToken, ^{
@@ -217,7 +218,7 @@ static leveldb::WriteOptions writeOptions;
 #endif
             return [NSKeyedArchiver archivedDataWithRootObject:object];
         };
-        self.decoder = ^ id (LevelDBKey *key, NSData *data) {
+        self.decoder = ^ id (NSString *key, NSData *data) {
             return [NSKeyedUnarchiver unarchiveObjectWithData:data];
         };
     }
@@ -263,12 +264,13 @@ static leveldb::WriteOptions writeOptions;
 
 #pragma mark - Setters
 
+/*
 - (void)setObject:(id)value forKey:(id)key {
     AssertDBExists(_db);
     AssertKeyType(key);
     NSParameterAssert(value != nil);
     
-    /*
+ 
     leveldb::Slice k = KeyFromStringOrData(key);
     LevelDBKey lkey = GenericKeyFromSlice(k);
     
@@ -279,12 +281,19 @@ static leveldb::WriteOptions writeOptions;
     
     if(!status.ok()) {
         NSLog(@"Problem storing key/value pair in database: %s", status.ToString().c_str());
-    }*/
+    }
     
-}
+}*/
+
 - (void) setValue:(id)value forKey:(NSString *)key {
-    [self setObject:value forKey:key];
+    AssertDBExists(_db);
+    //AssertKeyType(key);
+    NSParameterAssert(value != nil);
+    //LevelDBKey lkey = KeyFromString(key);
+    NSData *data = _encoder(key, value);
+    //[self setObject:value forKey:key];
 }
+
 - (void) setObject:(id)value forKeyedSubscript:(id)key {
     [self setObject:value forKey:key];
 }
@@ -446,8 +455,8 @@ static leveldb::WriteOptions writeOptions;
 
 - (NSArray *)allKeys {
     NSMutableArray *keys = [[[NSMutableArray alloc] init] autorelease];
-    [self enumerateKeysUsingBlock:^(LevelDBKey *key, BOOL *stop) {
-        [keys addObject:NSDataFromLevelDBKey(key)];
+    [self enumerateKeysUsingBlock:^(NSString *key, BOOL *stop) {
+        [keys addObject:key];
     }];
     return [NSArray arrayWithArray:keys];
 }
@@ -459,8 +468,8 @@ static leveldb::WriteOptions writeOptions;
                       filteredByPredicate:predicate
                                 andPrefix:nil
                              withSnapshot:nil
-                               usingBlock:^(LevelDBKey *key, id obj, BOOL *stop) {
-                                   [keys addObject:NSDataFromLevelDBKey(key)];
+                               usingBlock:^(NSString *key, id obj, BOOL *stop) {
+                                   [keys addObject:key];
                                }];
     return [NSArray arrayWithArray:keys];
 }
@@ -472,8 +481,8 @@ static leveldb::WriteOptions writeOptions;
                       filteredByPredicate:predicate
                                 andPrefix:nil
                              withSnapshot:nil
-                               usingBlock:^(LevelDBKey *key, id obj, BOOL *stop) {
-                                   [results setObject:obj forKey:NSDataFromLevelDBKey(key)];
+                               usingBlock:^(NSString *key, id obj, BOOL *stop) {
+                                   [results setObject:obj forKey:key];
                                }];
     
     return [NSDictionary dictionaryWithDictionary:results];
