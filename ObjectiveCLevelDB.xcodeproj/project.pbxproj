@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C8B23A51D6513BD0087AD72 /* LevelDB.m in Sources */ = {isa = PBXBuildFile; fileRef = 0CCFB2F31D650A5B0079BD61 /* LevelDB.m */; };
+		0C0A942E1D65372E00E00B3E /* LDBSnapshot.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A942B1D65372E00E00B3E /* LDBSnapshot.mm */; };
+		0C0A942F1D65372E00E00B3E /* LDBWriteBatch.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0C0A942D1D65372E00E00B3E /* LDBWriteBatch.mm */; };
+		0C0A94301D65375100E00B3E /* LevelDB.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0CCFB2F51D650B190079BD61 /* LevelDB.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -23,6 +25,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C0A942A1D65372E00E00B3E /* LDBSnapshot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LDBSnapshot.h; path = Classes/LDBSnapshot.h; sourceTree = "<group>"; };
+		0C0A942B1D65372E00E00B3E /* LDBSnapshot.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LDBSnapshot.mm; path = Classes/LDBSnapshot.mm; sourceTree = "<group>"; };
+		0C0A942C1D65372E00E00B3E /* LDBWriteBatch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LDBWriteBatch.h; path = Classes/LDBWriteBatch.h; sourceTree = "<group>"; };
+		0C0A942D1D65372E00E00B3E /* LDBWriteBatch.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LDBWriteBatch.mm; path = Classes/LDBWriteBatch.mm; sourceTree = "<group>"; };
 		0CCFB2F31D650A5B0079BD61 /* LevelDB.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = LevelDB.m; path = Classes/LevelDB.m; sourceTree = "<group>"; };
 		0CCFB2F51D650B190079BD61 /* LevelDB.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LevelDB.mm; path = Classes/LevelDB.mm; sourceTree = "<group>"; };
 		0CFE5A661D6506B0005756D9 /* libObjectiveCLevelDB.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libObjectiveCLevelDB.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -61,6 +67,10 @@
 			isa = PBXGroup;
 			children = (
 				0CFE5A731D650743005756D9 /* Common.h */,
+				0C0A942A1D65372E00E00B3E /* LDBSnapshot.h */,
+				0C0A942B1D65372E00E00B3E /* LDBSnapshot.mm */,
+				0C0A942C1D65372E00E00B3E /* LDBWriteBatch.h */,
+				0C0A942D1D65372E00E00B3E /* LDBWriteBatch.mm */,
 				0CFE5A781D650743005756D9 /* LevelDB.h */,
 				0CCFB2F31D650A5B0079BD61 /* LevelDB.m */,
 				0CCFB2F51D650B190079BD61 /* LevelDB.mm */,
@@ -124,7 +134,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C8B23A51D6513BD0087AD72 /* LevelDB.m in Sources */,
+				0C0A942E1D65372E00E00B3E /* LDBSnapshot.mm in Sources */,
+				0C0A942F1D65372E00E00B3E /* LDBWriteBatch.mm in Sources */,
+				0C0A94301D65375100E00B3E /* LevelDB.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

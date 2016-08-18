@@ -40,18 +40,18 @@ FOUNDATION_EXPORT NSString * const kLevelDBChangeTypeDelete;
 FOUNDATION_EXPORT NSString * const kLevelDBChangeValue;
 FOUNDATION_EXPORT NSString * const kLevelDBChangeKey;
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
+#ifdef __cplusplus
+extern "C" {
+#endif
     
 int lockOrUnlock(int fd, bool lock);
 NSString *NSStringFromLevelDBKey(LevelDBKey * key);
 NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
 NSString *getLibraryPath();
     
-//#ifdef __cplusplus
-//}
-//#endif
+#ifdef __cplusplus
+}
+#endif
 
 @interface LevelDB : NSObject {
     NSString *_path;
