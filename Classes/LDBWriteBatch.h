@@ -7,7 +7,7 @@
 
 #import <dispatch/dispatch.h>
 #import <Foundation/Foundation.h>
-#import "LevelDB.h"
+#import "LevelDB_mm.h"
 
 @interface LDBWritebatch : NSObject {
     id _db;

@@ -171,6 +171,8 @@ static leveldb::WriteOptions writeOptions;
             }
         }
         
+        _db = levelDBOpen([_path UTF8String]);
+        
         /*
         if (opts.filterPolicy > 0) {
             filterPolicy = (void *)leveldb::NewBloomFilterPolicy(opts.filterPolicy);
@@ -261,8 +263,8 @@ static leveldb::WriteOptions writeOptions;
 
 #pragma mark - Setters
 
-- (void) setObject:(id)value forKey:(id)key {
-    AssertDBExists(db);
+- (void)setObject:(id)value forKey:(id)key {
+    AssertDBExists(_db);
     AssertKeyType(key);
     NSParameterAssert(value != nil);
     
@@ -294,11 +296,11 @@ static leveldb::WriteOptions writeOptions;
 
 #pragma mark - Write batches
 
-- (LDBWritebatch *)newWritebatch {
+/*- (LDBWritebatch *)newWritebatch {
     return [[LDBWritebatch writeBatchFromDB:self] retain];
 }
 
-/*
+
 - (void)applyWritebatch:(LDBWritebatch *)writeBatch {
     leveldb::WriteBatch wb = [writeBatch writeBatch];
     leveldb::Status status = ((leveldb::DB *)db)->Write(writeOptions, &wb);
@@ -318,6 +320,8 @@ static leveldb::WriteOptions writeOptions;
 - (id) objectForKey:(id)key {
     return [self objectForKey:key withSnapshot:nil];
 }
+
+/*
 - (id) objectForKey:(id)key
        withSnapshot:(LDBSnapshot *)snapshot {
     
@@ -335,9 +339,10 @@ static leveldb::WriteOptions writeOptions;
     }
     
     LevelDBKey lkey = GenericKeyFromSlice(k);
-    return DecodeFromSlice(v_string, &lkey, _decoder);**/
+    return DecodeFromSlice(v_string, &lkey, _decoder);
     return nil;
-}
+}*/
+
 - (id) objectsForKeys:(NSArray *)keys notFoundMarker:(id)marker {
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:keys.count];
     [keys enumerateObjectsUsingBlock:^(id objId, NSUInteger idx, BOOL *stop) {
@@ -364,12 +369,12 @@ static leveldb::WriteOptions writeOptions;
     return [self objectExistsForKey:key withSnapshot:nil];
 }
 
-- (BOOL)objectExistsForKey:(id)key
+/*- (BOOL)objectExistsForKey:(id)key
                withSnapshot:(LDBSnapshot *)snapshot {
     
     AssertDBExists(db);
     AssertKeyType(key);
-    /*std::string v_string;
+    std::string v_string;
     MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
     leveldb::Slice k = KeyFromStringOrData(key);
     leveldb::Status status = ((leveldb::DB *)db)->Get(*readOptionsPtr, k, &v_string);
@@ -381,14 +386,14 @@ static leveldb::WriteOptions writeOptions;
             NSLog(@"Problem retrieving value for key '%@' from database: %s", key, status.ToString().c_str());
             return NULL;
         }
-    } else*/
+    } else
         return true;
-}
+}*/
 
 #pragma mark - Removers
 
 - (void)removeObjectForKey:(id)key {
-    AssertDBExists(db);
+    AssertDBExists(_db);
     AssertKeyType(key);
     /*
     leveldb::Slice k = KeyFromStringOrData(key);
@@ -411,7 +416,7 @@ static leveldb::WriteOptions writeOptions;
 }
 
 - (void)removeAllObjectsWithPrefix:(id)prefix {
-    AssertDBExists(db);
+    AssertDBExists(_db);
     /*
     leveldb::Iterator * iter = ((leveldb::DB *)db)->NewIterator(readOptions);
     leveldb::Slice lkey;
@@ -474,9 +479,9 @@ static leveldb::WriteOptions writeOptions;
     return [NSDictionary dictionaryWithDictionary:results];
 }
 
-- (LDBSnapshot *) newSnapshot {
+/*- (LDBSnapshot *) newSnapshot {
     return [[LDBSnapshot snapshotFromDB:self] retain];
-}
+}*/
 
 #pragma mark - Enumeration
 
@@ -573,7 +578,7 @@ static leveldb::WriteOptions writeOptions;
                      usingBlock:block];
 }
 
-- (void)enumerateKeysBackward:(BOOL)backward
+/*- (void)enumerateKeysBackward:(BOOL)backward
                 startingAtKey:(id)key
          filteredByPredicate:(NSPredicate *)predicate
                      andPrefix:(id)prefix
@@ -581,7 +586,7 @@ static leveldb::WriteOptions writeOptions;
                    usingBlock:(LevelDBKeyBlock)block {
     
     AssertDBExists(db);
-    /*MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
+    MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
     leveldb::Iterator* iter = ((leveldb::DB *)db)->NewIterator(*readOptionsPtr);
     leveldb::Slice lkey;
     BOOL stop = false;
@@ -611,8 +616,8 @@ static leveldb::WriteOptions writeOptions;
         if (stop) break;
     }
     
-    delete iter;*/
-}
+    delete iter;
+}*/
 
 - (void) enumerateKeysAndObjectsUsingBlock:(LevelDBKeyValueBlock)block {
     [self enumerateKeysAndObjectsBackward:false
@@ -640,7 +645,7 @@ static leveldb::WriteOptions writeOptions;
                                usingBlock:block];
 }
 
-- (void) enumerateKeysAndObjectsBackward:(BOOL)backward
+/*- (void) enumerateKeysAndObjectsBackward:(BOOL)backward
                                   lazily:(BOOL)lazily
                            startingAtKey:(id)key
                      filteredByPredicate:(NSPredicate *)predicate
@@ -649,7 +654,7 @@ static leveldb::WriteOptions writeOptions;
                               usingBlock:(id)block{
     
     AssertDBExists(db);
-    /*MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
+    MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
     leveldb::Iterator* iter = ((leveldb::DB *)db)->NewIterator(*readOptionsPtr);
     leveldb::Slice lkey;
     BOOL stop = false;
@@ -703,8 +708,8 @@ static leveldb::WriteOptions writeOptions;
         if (stop) break;
     }
     
-    delete iter;*/
-}
+    delete iter;
+}*/
 
 #pragma mark - Bookkeeping
 
@@ -732,7 +737,7 @@ static leveldb::WriteOptions writeOptions;
 }
 
 - (BOOL)closed {
-    return db == NULL;
+    return _db == NULL;
 }
 
 - (void)dealloc {

@@ -6,7 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "LevelDB.h"
+#import "LevelDB_mm.h"
 
 @class LevelDB;
 

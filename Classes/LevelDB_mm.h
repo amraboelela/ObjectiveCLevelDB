@@ -1,14 +1,14 @@
 //
 //  LevelDB.h
 //
-//  Copyright 2011 Pave Labs. 
+//  Copyright 2011 Pave Labs.
 //  See LICENCE for details.
 //
 
 #import <Foundation/Foundation.h>
 
-//@class LDBSnapshot;
-//@class LDBWritebatch;
+@class LDBSnapshot;
+@class LDBWritebatch;
 
 typedef struct LevelDBOptions {
     BOOL createIfMissing ;
@@ -44,10 +44,10 @@ FOUNDATION_EXPORT NSString * const kLevelDBChangeKey;
 extern "C" {
 #endif
     
-int lockOrUnlock(int fd, bool lock);
-NSString *NSStringFromLevelDBKey(LevelDBKey * key);
-NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
-NSString *getLibraryPath();
+    int lockOrUnlock(int fd, bool lock);
+    NSString *NSStringFromLevelDBKey(LevelDBKey * key);
+    NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
+    NSString *getLibraryPath();
     
 #ifdef __cplusplus
 }
@@ -58,9 +58,9 @@ NSString *getLibraryPath();
     NSString *_name;
     LevelDBEncoderBlock _encoder;
     LevelDBDecoderBlock _decoder;
-    void *_db; // leveldb::DB
-    void *_cache; // const leveldb::Cache
-    void *_filterPolicy; // const leveldb::FilterPolicy
+    void *db; // leveldb::DB
+    void *cache; // const leveldb::Cache
+    void *filterPolicy; // const leveldb::FilterPolicy
 }
 
 ///------------------------------------------------------------------------
@@ -186,17 +186,17 @@ NSString *getLibraryPath();
 /**
  Return an retained LDBWritebatch instance for this database
  */
-//- (LDBWritebatch *) newWritebatch;
+- (LDBWritebatch *) newWritebatch;
 
 /**
  Apply the operations from a writebatch into the current database
  */
-//- (void) applyWritebatch:(LDBWritebatch *)writeBatch;
+- (void) applyWritebatch:(LDBWritebatch *)writeBatch;
 
 /**
  Create new writebatch, apply the operations in block from a writebatch into the current database
  */
-//- (void) performWritebatch:(void (^)(LDBWritebatch *wb))block;
+- (void) performWritebatch:(void (^)(LDBWritebatch *wb))block;
 
 #pragma mark - Getters
 
@@ -294,7 +294,7 @@ NSString *getLibraryPath();
  snapshot was taken do not affect the snapshot. Most *read* methods available in the LevelDB class are also
  available in the LDBSnapshot class.
  */
-//- (LDBSnapshot *) newSnapshot;
+- (LDBSnapshot *) newSnapshot;
 
 #pragma mark - Enumeration
 
