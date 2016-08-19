@@ -22,7 +22,7 @@
 
 #include "Common.h"
 
-#define MaybeAddSnapshotToOptions(_from_, _to_, _snap_) \
+/*#define MaybeAddSnapshotToOptions(_from_, _to_, _snap_) \
 leveldb::ReadOptions __to_;\
 leveldb::ReadOptions * _to_ = &__to_;\
 if (_snap_ != nil) { \
@@ -30,65 +30,20 @@ _to_->fill_cache = _from_.fill_cache; \
 _to_->snapshot = [_snap_ getSnapshot]; \
 } else \
 _to_ = &_from_;
-
-#define SeekToFirstOrKey(iter, key, _backward_) \
-(key != nil) ? iter->Seek(KeyFromStringOrData(key)) : \
-_backward_ ? iter->SeekToLast() : iter->SeekToFirst()
-
-/*
-#define MoveCursor(_iter_, _backward_) \
-_backward_ ? iter->Prev() : iter->Next()
-
-#define EnsureNSData(_obj_) \
-([_obj_ isKindOfClass:[NSData class]]) ? _obj_ : \
-([_obj_ isKindOfClass:[NSString class]]) ? [NSData dataWithBytes:[_obj_ cStringUsingEncoding:NSUTF8StringEncoding] \
-length:[_obj_ lengthOfBytesUsingEncoding:NSUTF8StringEncoding]] : nil
 */
 
 #define AssertDBExists(_db_) \
 NSAssert(_db_ != NULL, @"Database reference is not existent (it has probably been closed)");
 
-/*namespace {
-    class BatchIterator : public leveldb::WriteBatch::Handler {
-    public:
-        void (^putCallback)(const leveldb::Slice& key, const leveldb::Slice& value);
-        void (^deleteCallback)(const leveldb::Slice& key);
-        
-        virtual void Put(const leveldb::Slice& key, const leveldb::Slice& value) {
-            putCallback(key, value);
-        }
-        virtual void Delete(const leveldb::Slice& key) {
-            deleteCallback(key);
-        }
-    };
-}*/
-
 #pragma mark - Public functions
-
-/*
-int lockOrUnlock(int fd, bool lock) {
-    errno = 0;
-    struct flock f;
-    memset(&f, 0, sizeof(f));
-    f.l_type = (lock ? F_WRLCK : F_UNLCK);
-    f.l_whence = SEEK_SET;
-    f.l_start = 0;
-    f.l_len = 0;        // Lock/unlock entire file
-    return fcntl(fd, F_SETLK, &f);
-}
-
-NSString *NSStringFromLevelDBKey(LevelDBKey * key) {
-    return [[[NSString alloc] initWithBytes:key->data
-                                     length:key->length
-                                   encoding:NSUTF8StringEncoding] autorelease];
-}
-NSData   *NSDataFromLevelDBKey(LevelDBKey * key) {
-    return [NSData dataWithBytes:key->data length:key->length];
-}*/
 
 NSString *getLibraryPath() {
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES);
     return [paths objectAtIndex:0];
+}
+
+static void seekToFirstOrKey(void *iter, NSString *key) {
+    (key != nil) ? levelDBIteratorSeek(iter, [key UTF8String], key.length) : levelDBSeekToFirst(iter);
 }
 
 NSString * const kLevelDBChangeType         = @"changeType";
@@ -101,30 +56,12 @@ LevelDBOptions MakeLevelDBOptions() {
     return (LevelDBOptions) {true, true, false, false, true, 0, 0};
 }
 
-/*
-@interface LDBSnapshot ()
-+ (id) snapshotFromDB:(LevelDB *)database;
-- (const leveldb::Snapshot *) getSnapshot;
-@end
-
-@interface LDBWritebatch ()
-+ (instancetype) writeBatchFromDB:(id)db;
-- (leveldb::WriteBatch) writeBatch;
-@end
-
-static leveldb::ReadOptions readOptions;
-static leveldb::WriteOptions writeOptions;
-*/
-
-@interface LevelDB ()
-
-//@property (nonatomic, readonly) leveldb::DB * db;
+@interface LevelDB()
 
 @end
 
 @implementation LevelDB
 
-//@synthesize db=db;
 @synthesize name=_name;
 @synthesize path=_path;
 @synthesize encoder=_encoder;
@@ -143,23 +80,6 @@ static leveldb::WriteOptions writeOptions;
         self.name = name;
         self.path = path;
         
-        /*
-        leveldb::Options options;
-        
-        options.create_if_missing = opts.createIfMissing;
-        options.paranoid_checks = opts.paranoidCheck;
-        options.error_if_exists = opts.errorIfExists;
-        
-        if (!opts.compression)
-            options.compression = leveldb::kNoCompression;
-        
-        if (opts.cacheSize > 0) {
-            options.block_cache = leveldb::NewLRUCache(opts.cacheSize);
-            cache = options.block_cache;
-        } else {
-            readOptions.fill_cache = false;
-        }*/
-        
         if (opts.createIntermediateDirectories) {
             NSString *dirpath = [path stringByDeletingLastPathComponent];
             NSFileManager *fm = [NSFileManager defaultManager];
@@ -173,42 +93,7 @@ static leveldb::WriteOptions writeOptions;
                 return nil;
             }
         }
-        
         _db = levelDBOpen([_path UTF8String]);
-        
-        /*
-        if (opts.filterPolicy > 0) {
-            filterPolicy = (void *)leveldb::NewBloomFilterPolicy(opts.filterPolicy);
-            options.filter_policy = (const leveldb::FilterPolicy *)filterPolicy;
-        }
-        
-        leveldb::Status status = leveldb::DB::Open(options, [_path UTF8String], (leveldb::DB **)&db);
-        
-        readOptions.fill_cache = true;
-        writeOptions.sync = false;
-        
-        if (!status.ok()) {
-            NSLog(@"Problem creating LevelDB database: %s", status.ToString().c_str());
-            int fd = open([[_path stringByAppendingPathComponent:@"LOCK"] UTF8String], O_RDWR | O_CREAT, 0644);
-            if (lockOrUnlock(fd, false) != -1) {
-                NSLog(@"Was able to unlock the databse");
-            } else {
-                NSLog(@"Couldn't unlock the databse");
-                return nil;
-            }
-            status = RepairDB([_path UTF8String], options);
-            if (status.ok()) {
-                NSLog(@"Was able to repair databse");
-            } else {
-                NSLog(@"Couldn't repair databse");
-                return nil;
-            }
-            status = leveldb::DB::Open(options, [_path UTF8String], (leveldb::DB **)&db);
-            if (!status.ok()) {
-                NSLog(@"Problem creating LevelDB database: %s", status.ToString().c_str());
-                return nil;
-            }
-        }*/
         
         self.encoder = ^ NSData *(NSString *key, id object) {
 #ifdef DEBUG
@@ -228,11 +113,11 @@ static leveldb::WriteOptions writeOptions;
     return self;
 }
 
-+ (id) databaseInLibraryWithName:(NSString *)name {
++ (id)databaseInLibraryWithName:(NSString *)name {
     LevelDBOptions opts = MakeLevelDBOptions();
     return [self databaseInLibraryWithName:name andOptions:opts];
 }
-+ (id) databaseInLibraryWithName:(NSString *)name
++ (id)databaseInLibraryWithName:(NSString *)name
                       andOptions:(LevelDBOptions)opts {
     NSString *path = [getLibraryPath() stringByAppendingPathComponent:name];
     LevelDB *ldb = [[[self alloc] initWithPath:path name:name andOptions:opts] autorelease];
@@ -246,29 +131,10 @@ static leveldb::WriteOptions writeOptions;
     return [NSString stringWithFormat:@"<%@:%p path: %@>", [self className], self, _path];
 }
 
-- (void)setSafe:(BOOL)safe {
-    //writeOptions.sync = safe;
-}
-
-- (BOOL)safe {
-    //return writeOptions.sync;
-    return YES;
-}
-
-- (void)setUseCache:(BOOL)useCache {
-    //readOptions.fill_cache = useCache;
-}
-
-- (BOOL)useCache {
-    //return readOptions.fill_cache;
-    return YES;
-}
-
 #pragma mark - Setters
 
 - (void)setObject:(id)value forKey:(NSString *)key {
     AssertDBExists(_db);
-    //AssertKeyType(key);
     NSParameterAssert(value != nil);
     //LevelDBKey lkey = KeyFromString(key);
     NSData *data = _encoder(key, value);
@@ -278,35 +144,7 @@ static leveldb::WriteOptions writeOptions;
     if (status) {
         NSLog(@"Problem storing key/value pair in database");
     }
-    /*
-    AssertDBExists(_db);
-    AssertKeyType(key);
-    NSParameterAssert(value != nil);
-    
- 
-    leveldb::Slice k = KeyFromStringOrData(key);
-    LevelDBKey lkey = GenericKeyFromSlice(k);
-    
-    NSData *data = _encoder(&lkey, value);
-    leveldb::Slice v = SliceFromData(data);
-    
-    leveldb::Status status = ((leveldb::DB *)db)->Put(writeOptions, k, v);
-    
-    if(!status.ok()) {
-        NSLog(@"Problem storing key/value pair in database: %s", status.ToString().c_str());
-    }*/
-    
 }
-
-/*
-- (void) setValue:(id)value forKey:(NSString *)key {
-    AssertDBExists(_db);
-    //AssertKeyType(key);
-    NSParameterAssert(value != nil);
-    //LevelDBKey lkey = KeyFromString(key);
-    NSData *data = _encoder(key, value);
-    //[self setObject:value forKey:key];
-}*/
 
 - (void) setObject:(id)value forKeyedSubscript:(NSString *)key {
     [self setObject:value forKey:key];
@@ -317,27 +155,6 @@ static leveldb::WriteOptions writeOptions;
         [self setObject:obj forKey:key];
     }];
 }
-
-/*#pragma mark - Write batches
-
-- (LDBWritebatch *)newWritebatch {
-    return [[LDBWritebatch writeBatchFromDB:self] retain];
-}
-
-
-- (void)applyWritebatch:(LDBWritebatch *)writeBatch {
-    leveldb::WriteBatch wb = [writeBatch writeBatch];
-    leveldb::Status status = ((leveldb::DB *)db)->Write(writeOptions, &wb);
-    if(!status.ok()) {
-        NSLog(@"Problem applying the write batch in database: %s", status.ToString().c_str());
-    }
-}
-
-- (void)performWritebatch:(void (^)(LDBWritebatch *wb))block {
-    LDBWritebatch *wb = [self newWritebatch];
-    block(wb);
-    [wb apply];
-}*/
 
 #pragma mark - Getters
 
@@ -365,11 +182,6 @@ static leveldb::WriteOptions writeOptions;
     return [NSArray arrayWithArray:result];
 }
 
-/*
-- (id)objectForKeyedSubscript:(NSString *)key {
-    return [self objectForKey:key];
-}*/
-
 - (BOOL)objectExistsForKey:(NSString *)key {
     return [self objectExistsForKey:key];
 }
@@ -378,25 +190,11 @@ static leveldb::WriteOptions writeOptions;
 
 - (void)removeObjectForKey:(NSString *)key {
     AssertDBExists(_db);
-    //AssertKeyType(key);
-    
-    //void *outData;
-    //int outDataLength;
-    int status = levelDBDelete(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
+
+    int status = levelDBDeleteItem(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
     if (status) {
         NSLog(@"Problem removing object with key: %@ in database", key);
     }
-    //NSData *data = [NSData dataWithBytes:outData length:outDataLength];
-    //return _decoder(key, data);
-    
-    /*
-    leveldb::Slice k = KeyFromStringOrData(key);
-    leveldb::Status status = ((leveldb::DB *)db)->Delete(writeOptions, k);
-    
-    if(!status.ok()) {
-        NSLog(@"Problem deleting key/value pair in database: %s", status.ToString().c_str());
-    }*/
-    
 }
 
 - (void) removeObjectsForKeys:(NSArray *)keyArray {
@@ -411,29 +209,22 @@ static leveldb::WriteOptions writeOptions;
 
 - (void)removeAllObjectsWithPrefix:(NSString *)prefix {
     AssertDBExists(_db);
-    /*
-    leveldb::Iterator * iter = ((leveldb::DB *)db)->NewIterator(readOptions);
-    leveldb::Slice lkey;
+    void *iter = levelDBNewIterator(_db);
     
-    const void *prefixPtr;
-    size_t prefixLen;
-    prefix = EnsureNSData(prefix);
-    if (prefix) {
-        prefixPtr = [(NSData *)prefix bytes];
-        prefixLen = (size_t)[(NSData *)prefix length];
-    }
+    const void *prefixPtr = [prefix UTF8String];
+    size_t prefixLen = prefix.length;
     
-    for (SeekToFirstOrKey(iter, (NSString *)prefix, NO)
-         ; iter->Valid()
-         ; MoveCursor(iter, NO)) {
+    for (seekToFirstOrKey(iter, prefix); levelDBIteratorIsValid(iter); levelDBMoveCursor(iter, false)) {
+        char *iKey;
+        int iKeyLength;
+        levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
         
-        lkey = iter->key();
-        if (prefix && memcmp(lkey.data(), prefixPtr, MIN(prefixLen, lkey.size())) != 0)
+        if (prefix && memcmp(iKey, prefixPtr, MIN(prefixLen, iKeyLength)) != 0) {
             break;
-        
-        ((leveldb::DB *)db)->Delete(writeOptions, lkey);
+        }
+        levelDBDeleteItem(_db, iKey, iKeyLength);
     }
-    delete iter;*/
+    levelDBDeleteIterator(iter);
 }
 
 #pragma mark - Selection
@@ -477,22 +268,17 @@ static leveldb::WriteOptions writeOptions;
              backward:(BOOL)backward
                prefix:(NSString *)prefix
                 start:(NSString *)key {
-    
+
     const void *prefixPtr;
     size_t prefixLen;
-    //leveldb::Slice lkey, startingKey;
     NSString *startingKey;
     
-    //prefix = EnsureNSData(prefix);
     if (prefix) {
-        //prefixPtr = [(NSData *)prefix bytes];
-        //prefixLen = (size_t)[(NSData *)prefix length];
-        startingKey = prefix;//leveldb::Slice((char *)prefixPtr, prefixLen);
+        startingKey = prefix;
         
         if (key) {
-            //leveldb::Slice skey = KeyFromStringOrData(key);
             NSRange range = [key rangeOfString:prefix];
-            if (range.length > 0 &&  range.location == 0) { //(skey.size() > prefixLen && memcmp(skey.data(), prefixPtr, prefixLen) == 0) {
+            if (range.length > 0 &&  range.location == 0) {
                 startingKey = key;
             }
         }
@@ -506,10 +292,7 @@ static leveldb::WriteOptions writeOptions;
 
             char startingKeyPtr[len];
             [startingKey getCharacters:startingKeyPtr range:NSMakeRange(0, len)];
-            
-            //void *startingKeyPtr = malloc(startingKey.length);//size());
             unsigned char *keyChar;
-            //memcpy(startingKeyPtr, startingKey.data(), startingKey.size());
             while (1) {
                 if (i < 0) {
                     levelDBSeekToLast(iter);
@@ -521,20 +304,17 @@ static leveldb::WriteOptions writeOptions;
                     levelDBIteratorSeek(iter, startingKeyPtr, len);
                     if (!levelDBIteratorIsValid(iter)) {
                         levelDBSeekToLast(iter);
-                        //iter->SeekToLast();
                     }
                     break;
                 }
                 i--;
             };
-            //free(startingKeyPtr);
             if (!levelDBIteratorIsValid(iter)) {
                 return;
             }
             char *iKey;
             int iKeyLength;
             levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
-            //lkey = iter->key();
             if (len > 0 && prefix != nil) {
                 signed int cmp = memcmp(iKey, startingKeyPtr, len);
                 if (cmp > 0) {
@@ -580,9 +360,7 @@ static leveldb::WriteOptions writeOptions;
         block(key, stop);
     };
     
-    for ([self _startIterator:iter backward:backward prefix:prefix start:key]
-         ; levelDBIteratorIsValid(iter)
-         ; levelDBMoveCursor(iter, backward)) {
+    for ([self _startIterator:iter backward:backward prefix:prefix start:key]; levelDBIteratorIsValid(iter); levelDBMoveCursor(iter, backward)) {
         char *iKey;
         int iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
@@ -624,72 +402,6 @@ static leveldb::WriteOptions writeOptions;
                                usingBlock:block];
 }
 
-/*- (void) enumerateKeysAndObjectsBackward:(BOOL)backward
-                                  lazily:(BOOL)lazily
-                           startingAtKey:(NSString *)key
-                     filteredByPredicate:(NSPredicate *)predicate
-                               andPrefix:(NSString *)prefix
-                            withSnapshot:(LDBSnapshot *)snapshot
-                              usingBlock:(id)block{
-    
-    AssertDBExists(db);
-    MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
-    leveldb::Iterator* iter = ((leveldb::DB *)db)->NewIterator(*readOptionsPtr);
-    leveldb::Slice lkey;
-    BOOL stop = false;
-    
-    LevelDBLazyKeyValueBlock iterate = (predicate != nil)
-    
-    // If there is a predicate:
-    ? ^ (LevelDBKey *lk, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
-        // We need to get the value, whether the `lazily` flag was set or not
-        id value = valueGetter();
-        
-        // If the predicate yields positive, we call the block
-        if ([predicate evaluateWithObject:value]) {
-            if (lazily)
-                ((LevelDBLazyKeyValueBlock)block)(lk, valueGetter, stop);
-            else
-                ((LevelDBKeyValueBlock)block)(lk, value, stop);
-        }
-    }
-    
-    // Otherwise, we call the block
-    : ^ (LevelDBKey *lk, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
-        if (lazily)
-            ((LevelDBLazyKeyValueBlock)block)(lk, valueGetter, stop);
-        else
-            ((LevelDBKeyValueBlock)block)(lk, valueGetter(), stop);
-    };
-    
-    NSData *prefixData = EnsureNSData(prefix);
-    
-    LevelDBValueGetterBlock getter;
-    for ([self _startIterator:iter backward:backward prefix:prefix start:key]
-         ; iter->Valid()
-         ; MoveCursor(iter, backward)) {
-        
-        lkey = iter->key();
-        // If there is prefix provided, and the prefix and key don't match, we break out of iteration
-        if (prefix && memcmp(lkey.data(), [prefixData bytes], MIN((size_t)[prefixData length], lkey.size())) != 0)
-            break;
-        
-        __block LevelDBKey lk = GenericKeyFromSlice(lkey);
-        __block id v = nil;
-        
-        getter = ^ id {
-            if (v) return v;
-            v = DecodeFromSlice(iter->value(), &lk, _decoder);
-            return v;
-        };
-        
-        iterate(&lk, getter, &stop);
-        if (stop) break;
-    }
-    
-    delete iter;
-}*/
-
 #pragma mark - Bookkeeping
 
 - (void)deleteDatabaseFromDisk {
@@ -700,19 +412,7 @@ static leveldb::WriteOptions writeOptions;
 }
 
 - (void)close {
-    /*@synchronized(self) {
-        if (db) {
-            delete (leveldb::DB *)db;
-            
-            if (cache)
-                delete (const leveldb::Cache *)cache;
-            
-            if (filterPolicy)
-                delete (const leveldb::FilterPolicy *)filterPolicy;
-            
-            db = NULL;
-        }
-    }*/
+    levelDBDelete(_db);
 }
 
 - (BOOL)closed {

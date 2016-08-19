@@ -60,9 +60,9 @@ NSString *getLibraryPath();
     NSString *_name;
     LevelDBEncoderBlock _encoder;
     LevelDBDecoderBlock _decoder;
-    void *_db; // leveldb::DB
-    void *_cache; // const leveldb::Cache
-    void *_filterPolicy; // const leveldb::FilterPolicy
+    void *_db;
+    //void *_cache;
+    //void *_filterPolicy;
 }
 
 ///------------------------------------------------------------------------
