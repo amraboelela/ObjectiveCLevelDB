@@ -214,7 +214,7 @@ LevelDBOptions MakeLevelDBOptions() {
     const void *prefixPtr = [prefix UTF8String];
     size_t prefixLen = prefix.length;
     
-    for (seekToFirstOrKey(iter, prefix); levelDBIteratorIsValid(iter); levelDBMoveCursor(iter, false)) {
+    for (seekToFirstOrKey(iter, prefix); levelDBIteratorIsValid(iter); levelDBIteratorMoveForward(iter)) {
         char *iKey;
         int iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
@@ -318,7 +318,7 @@ LevelDBOptions MakeLevelDBOptions() {
             if (len > 0 && prefix != nil) {
                 signed int cmp = memcmp(iKey, startingKeyPtr, len);
                 if (cmp > 0) {
-                    levelDBIteratorPrevious(iter);
+                    levelDBIteratorMoveBackward(iter);
                 }
             }
         } else {
@@ -360,7 +360,9 @@ LevelDBOptions MakeLevelDBOptions() {
         block(key, stop);
     };
     
-    for ([self _startIterator:iter backward:backward prefix:prefix start:key]; levelDBIteratorIsValid(iter); levelDBMoveCursor(iter, backward)) {
+    for ([self _startIterator:iter backward:backward prefix:prefix start:key];
+         levelDBIteratorIsValid(iter);
+         backward ? levelDBIteratorMoveBackward(iter) : levelDBIteratorMoveForward(iter)) {
         char *iKey;
         int iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
@@ -412,7 +414,10 @@ LevelDBOptions MakeLevelDBOptions() {
 }
 
 - (void)close {
-    levelDBDelete(_db);
+    if (_db) {
+        levelDBDelete(_db);
+        _db = NULL;
+    }
 }
 
 - (BOOL)closed {
