@@ -43,7 +43,7 @@ NSString *getLibraryPath() {
 }
 
 static void seekToFirstOrKey(void *iter, NSString *key) {
-    (key != nil) ? levelDBIteratorSeek(iter, [key UTF8String], key.length) : levelDBSeekToFirst(iter);
+    (key != nil) ? levelDBIteratorSeek(iter, [key UTF8String], key.length) : levelDBIteratorMoveToFirst(iter);
 }
 
 NSString * const kLevelDBChangeType         = @"changeType";
@@ -136,11 +136,9 @@ LevelDBOptions MakeLevelDBOptions() {
 - (void)setObject:(id)value forKey:(NSString *)key {
     AssertDBExists(_db);
     NSParameterAssert(value != nil);
-    //LevelDBKey lkey = KeyFromString(key);
     NSData *data = _encoder(key, value);
-    //[self setObject:value forKey:key];
     
-    int status = levelDBPut(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [data bytes], [data length]);
+    int status = levelDBItemPut(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [data bytes], [data length]);
     if (status) {
         NSLog(@"Problem storing key/value pair in database");
     }
@@ -162,7 +160,7 @@ LevelDBOptions MakeLevelDBOptions() {
     AssertDBExists(_db);
     void *outData;
     int outDataLength;
-    int status = levelDBGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
+    int status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
     if (status) {
         NSLog(@"Problem retrieving value for key '%@' from database", key);
         return nil;
@@ -191,7 +189,7 @@ LevelDBOptions MakeLevelDBOptions() {
 - (void)removeObjectForKey:(NSString *)key {
     AssertDBExists(_db);
 
-    int status = levelDBDeleteItem(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
+    int status = levelDBItemDelete(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
     if (status) {
         NSLog(@"Problem removing object with key: %@ in database", key);
     }
@@ -209,7 +207,7 @@ LevelDBOptions MakeLevelDBOptions() {
 
 - (void)removeAllObjectsWithPrefix:(NSString *)prefix {
     AssertDBExists(_db);
-    void *iter = levelDBNewIterator(_db);
+    void *iter = levelDBIteratorNew(_db);
     
     const void *prefixPtr = [prefix UTF8String];
     size_t prefixLen = prefix.length;
@@ -222,9 +220,9 @@ LevelDBOptions MakeLevelDBOptions() {
         if (prefix && memcmp(iKey, prefixPtr, MIN(prefixLen, iKeyLength)) != 0) {
             break;
         }
-        levelDBDeleteItem(_db, iKey, iKeyLength);
+        levelDBItemDelete(_db, iKey, iKeyLength);
     }
-    levelDBDeleteIterator(iter);
+    levelDBIteratorDelete(iter);
 }
 
 #pragma mark - Selection
@@ -295,7 +293,7 @@ LevelDBOptions MakeLevelDBOptions() {
             unsigned char *keyChar;
             while (1) {
                 if (i < 0) {
-                    levelDBSeekToLast(iter);
+                    levelDBIteratorMoveToLast(iter);
                     break;
                 }
                 keyChar = (unsigned char *)startingKeyPtr + i;
@@ -303,7 +301,7 @@ LevelDBOptions MakeLevelDBOptions() {
                     *keyChar = *keyChar + 1;
                     levelDBIteratorSeek(iter, startingKeyPtr, len);
                     if (!levelDBIteratorIsValid(iter)) {
-                        levelDBSeekToLast(iter);
+                        levelDBIteratorMoveToLast(iter);
                     }
                     break;
                 }
@@ -328,9 +326,9 @@ LevelDBOptions MakeLevelDBOptions() {
     } else if (key) {
         levelDBIteratorSeek(iter, [key UTF8String], key.length);
     } else if (backward) {
-        levelDBSeekToLast(iter);
+        levelDBIteratorMoveToLast(iter);
     } else {
-        levelDBSeekToFirst(iter);
+        levelDBIteratorMoveToFirst(iter);
     }
 }
 
@@ -348,7 +346,7 @@ LevelDBOptions MakeLevelDBOptions() {
                     andPrefix:(NSString *)prefix
                    usingBlock:(LevelDBKeyBlock)block {
     AssertDBExists(_db);
-    void *iter = levelDBNewIterator(_db);
+    void *iter = levelDBIteratorNew(_db);
     BOOL stop = false;
     LevelDBKeyValueBlock iterate = (predicate != nil)
     ? ^(NSString *key, id value, BOOL *stop) {
@@ -377,7 +375,7 @@ LevelDBOptions MakeLevelDBOptions() {
         iterate(iKeyString, v, &stop);
         if (stop) break;
     }
-    levelDBDeleteIterator(iter);
+    levelDBIteratorDelete(iter);
 }
 
 - (void)enumerateKeysAndObjectsUsingBlock:(LevelDBKeyValueBlock)block {
