@@ -114,7 +114,7 @@ NSString *getLibraryPath();
  
  @param name The database's filename
  */
-+ (id) databaseInLibraryWithName:(NSString *)name;
++ (id)databaseInLibraryWithName:(NSString *)name;
 
 /**
  A class method that returns an autoreleased instance of LevelDB with the given name and options, inside the Library folder
@@ -122,7 +122,7 @@ NSString *getLibraryPath();
  @param name The database's filename
  @param opts A LevelDBOptions struct with options for fine tuning leveldb
  */
-+ (id) databaseInLibraryWithName:(NSString *)name andOptions:(LevelDBOptions)opts;
++ (id)databaseInLibraryWithName:(NSString *)name andOptions:(LevelDBOptions)opts;
 
 /**
  Initialize a leveldb instance
@@ -130,7 +130,7 @@ NSString *getLibraryPath();
  @param path The parent directory of the database file on disk
  @param name the filename of the database file on disk
  */
-- (id) initWithPath:(NSString *)path andName:(NSString *)name;
+- (id)initWithPath:(NSString *)path andName:(NSString *)name;
 
 /**
  Initialize a leveldb instance
@@ -139,20 +139,20 @@ NSString *getLibraryPath();
  @param name the filename of the database file on disk
  @param opts A LevelDBOptions struct with options for fine tuning leveldb
  */
-- (id) initWithPath:(NSString *)path name:(NSString *)name andOptions:(LevelDBOptions)opts;
+- (id)initWithPath:(NSString *)path name:(NSString *)name andOptions:(LevelDBOptions)opts;
 
 
 /**
  Delete the database file on disk
  */
-- (void) deleteDatabaseFromDisk;
+- (void)deleteDatabaseFromDisk;
 
 /**
  Close the database.
  
  @warning The instance cannot be used to perform any query after it has been closed.
  */
-- (void) close;
+- (void)close;
 
 #pragma mark - Setters
 
@@ -169,7 +169,7 @@ NSString *getLibraryPath();
 /**
  Same as `[self setObject:forKey:]`
  */
-- (void)setObject:(id)value forKeyedSubscript:(id)key;
+- (void)setObject:(id)value forKeyedSubscript:(NSString *)key;
 
 /**
  Same as `[self setObject:forKey:]`
@@ -212,7 +212,7 @@ NSString *getLibraryPath();
 /**
  Same as `[self objectForKey:]`
  */
-- (id) objectForKeyedSubscript:(id)key;
+- (id)objectForKeyedSubscript:(NSString *)key;
 
 /**
  Same as `[self objectForKey:]`
@@ -229,14 +229,14 @@ NSString *getLibraryPath();
  @param keys The list of keys to fetch from the database
  @param marker The value to associate to missing keys
  */
-- (id) objectsForKeys:(NSArray *)keys notFoundMarker:(id)marker;
+- (id)objectsForKeys:(NSArray *)keys notFoundMarker:(id)marker;
 
 /**
  Return a boolean value indicating whether or not the key exists in the database
  
  @param key The key to check for existence
  */
-- (BOOL) objectExistsForKey:(id)key;
+- (BOOL)objectExistsForKey:(NSString *)key;
 
 #pragma mark - Removers
 
@@ -245,14 +245,14 @@ NSString *getLibraryPath();
  
  @param key The key to remove from the database
  */
-- (void)removeObjectForKey:(id)key;
+- (void)removeObjectForKey:(NSString *)key;
 
 /**
  Remove a set of keys (and their associated values) from the database
  
  @param keyArray An array of keys to remove from the database
  */
-- (void) removeObjectsForKeys:(NSArray *)keyArray;
+- (void)removeObjectsForKeys:(NSArray *)keyArray;
 
 /**
  Remove all objects from the database
@@ -264,7 +264,7 @@ NSString *getLibraryPath();
  
  @param prefix The key prefix used to remove all matching keys (of type `NSString` or `NSData`)
  */
-- (void)removeAllObjectsWithPrefix:(id)prefix;
+- (void)removeAllObjectsWithPrefix:(NSString *)prefix;
 
 #pragma mark - Selection
 
@@ -319,9 +319,9 @@ NSString *getLibraryPath();
  @param block The enumeration block used when iterating over all the keys. It takes two arguments: the first is a pointer to a `LevelDBKey` struct. You can convert this to a `NSString` or `NSData` instance, using `NSDataFromLevelDBKey(LevelDBKey *key)` and `NSStringFromLevelDBKey(LevelDBKey *key)` respectively. The second arguments to the block is a `BOOL *` that can be used to stop enumeration at any time (e.g. `*stop = TRUE;`).
  */
 - (void)enumerateKeysBackward:(BOOL)backward
-                startingAtKey:(id)key
+                startingAtKey:(NSString *)key
           filteredByPredicate:(NSPredicate *)predicate
-                    andPrefix:(id)prefix
+                    andPrefix:(NSString *)prefix
                    usingBlock:(LevelDBKeyBlock)block;
 
 
@@ -345,9 +345,9 @@ NSString *getLibraryPath();
  */
 - (void)enumerateKeysAndObjectsBackward:(BOOL)backward
                                  lazily:(BOOL)lazily
-                          startingAtKey:(id)key
+                          startingAtKey:(NSString *)key
                     filteredByPredicate:(NSPredicate *)predicate
-                              andPrefix:(id)prefix
+                              andPrefix:(NSString *)prefix
                              usingBlock:(id)block;
 
 @end

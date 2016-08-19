@@ -35,6 +35,7 @@ _to_ = &_from_;
 (key != nil) ? iter->Seek(KeyFromStringOrData(key)) : \
 _backward_ ? iter->SeekToLast() : iter->SeekToFirst()
 
+/*
 #define MoveCursor(_iter_, _backward_) \
 _backward_ ? iter->Prev() : iter->Next()
 
@@ -42,6 +43,7 @@ _backward_ ? iter->Prev() : iter->Next()
 ([_obj_ isKindOfClass:[NSData class]]) ? _obj_ : \
 ([_obj_ isKindOfClass:[NSString class]]) ? [NSData dataWithBytes:[_obj_ cStringUsingEncoding:NSUTF8StringEncoding] \
 length:[_obj_ lengthOfBytesUsingEncoding:NSUTF8StringEncoding]] : nil
+*/
 
 #define AssertDBExists(_db_) \
 NSAssert(_db_ != NULL, @"Database reference is not existent (it has probably been closed)");
@@ -306,7 +308,7 @@ static leveldb::WriteOptions writeOptions;
     //[self setObject:value forKey:key];
 }*/
 
-- (void) setObject:(id)value forKeyedSubscript:(id)key {
+- (void) setObject:(id)value forKeyedSubscript:(NSString *)key {
     [self setObject:value forKey:key];
 }
 
@@ -316,9 +318,9 @@ static leveldb::WriteOptions writeOptions;
     }];
 }
 
-#pragma mark - Write batches
+/*#pragma mark - Write batches
 
-/*- (LDBWritebatch *)newWritebatch {
+- (LDBWritebatch *)newWritebatch {
     return [[LDBWritebatch writeBatchFromDB:self] retain];
 }
 
@@ -363,17 +365,18 @@ static leveldb::WriteOptions writeOptions;
     return [NSArray arrayWithArray:result];
 }
 
-- (id)objectForKeyedSubscript:(id)key {
-    return [self objectForKey:key withSnapshot:nil];
-}
+/*
+- (id)objectForKeyedSubscript:(NSString *)key {
+    return [self objectForKey:key];
+}*/
 
-- (BOOL)objectExistsForKey:(id)key {
-    return [self objectExistsForKey:key withSnapshot:nil];
+- (BOOL)objectExistsForKey:(NSString *)key {
+    return [self objectExistsForKey:key];
 }
 
 #pragma mark - Removers
 
-- (void)removeObjectForKey:(id)key {
+- (void)removeObjectForKey:(NSString *)key {
     AssertDBExists(_db);
     //AssertKeyType(key);
     
@@ -406,7 +409,7 @@ static leveldb::WriteOptions writeOptions;
     [self removeAllObjectsWithPrefix:nil];
 }
 
-- (void)removeAllObjectsWithPrefix:(id)prefix {
+- (void)removeAllObjectsWithPrefix:(NSString *)prefix {
     AssertDBExists(_db);
     /*
     leveldb::Iterator * iter = ((leveldb::DB *)db)->NewIterator(readOptions);
@@ -420,7 +423,7 @@ static leveldb::WriteOptions writeOptions;
         prefixLen = (size_t)[(NSData *)prefix length];
     }
     
-    for (SeekToFirstOrKey(iter, (id)prefix, NO)
+    for (SeekToFirstOrKey(iter, (NSString *)prefix, NO)
          ; iter->Valid()
          ; MoveCursor(iter, NO)) {
         
@@ -449,7 +452,6 @@ static leveldb::WriteOptions writeOptions;
                             startingAtKey:nil
                       filteredByPredicate:predicate
                                 andPrefix:nil
-                             withSnapshot:nil
                                usingBlock:^(NSString *key, id obj, BOOL *stop) {
                                    [keys addObject:key];
                                }];
@@ -462,7 +464,6 @@ static leveldb::WriteOptions writeOptions;
                             startingAtKey:nil
                       filteredByPredicate:predicate
                                 andPrefix:nil
-                             withSnapshot:nil
                                usingBlock:^(NSString *key, id obj, BOOL *stop) {
                                    [results setObject:obj forKey:key];
                                }];
@@ -470,109 +471,140 @@ static leveldb::WriteOptions writeOptions;
     return [NSDictionary dictionaryWithDictionary:results];
 }
 
-/*- (LDBSnapshot *) newSnapshot {
-    return [[LDBSnapshot snapshotFromDB:self] retain];
-}*/
-
 #pragma mark - Enumeration
 
-/*
-- (void)_startIterator:(leveldb::Iterator*)iter
+- (void)_startIterator:(void *)iter
              backward:(BOOL)backward
-               prefix:(id)prefix
-                start:(id)key {
+               prefix:(NSString *)prefix
+                start:(NSString *)key {
     
     const void *prefixPtr;
     size_t prefixLen;
-    leveldb::Slice lkey, startingKey;
+    //leveldb::Slice lkey, startingKey;
+    NSString *startingKey;
     
-    prefix = EnsureNSData(prefix);
+    //prefix = EnsureNSData(prefix);
     if (prefix) {
-        prefixPtr = [(NSData *)prefix bytes];
-        prefixLen = (size_t)[(NSData *)prefix length];
-        startingKey = leveldb::Slice((char *)prefixPtr, prefixLen);
+        //prefixPtr = [(NSData *)prefix bytes];
+        //prefixLen = (size_t)[(NSData *)prefix length];
+        startingKey = prefix;//leveldb::Slice((char *)prefixPtr, prefixLen);
         
         if (key) {
-            leveldb::Slice skey = KeyFromStringOrData(key);
-            if (skey.size() > prefixLen && memcmp(skey.data(), prefixPtr, prefixLen) == 0) {
-                startingKey = skey;
+            //leveldb::Slice skey = KeyFromStringOrData(key);
+            NSRange range = [key rangeOfString:prefix];
+            if (range.length > 0 &&  range.location == 0) { //(skey.size() > prefixLen && memcmp(skey.data(), prefixPtr, prefixLen) == 0) {
+                startingKey = key;
             }
         }
+        unsigned int len = startingKey.length;
  
         // If a prefix is provided and the iteration is backwards
         // we need to start on the next key (maybe discarding the first iteration)
         if (backward) {
-            signed long long i = startingKey.size() - 1;
-            void * startingKeyPtr = malloc(startingKey.size());
+            
+            signed long long i = len - 1; //startingKey.size() - 1;
+
+            char startingKeyPtr[len];
+            [startingKey getCharacters:startingKeyPtr range:NSMakeRange(0, len)];
+            
+            //void *startingKeyPtr = malloc(startingKey.length);//size());
             unsigned char *keyChar;
-            memcpy(startingKeyPtr, startingKey.data(), startingKey.size());
+            //memcpy(startingKeyPtr, startingKey.data(), startingKey.size());
             while (1) {
                 if (i < 0) {
-                    iter->SeekToLast();
+                    levelDBSeekToLast(iter);
                     break;
                 }
                 keyChar = (unsigned char *)startingKeyPtr + i;
                 if (*keyChar < 255) {
                     *keyChar = *keyChar + 1;
-                    iter->Seek(leveldb::Slice((char *)startingKeyPtr, startingKey.size()));
-                    if (!iter->Valid()) {
-                        iter->SeekToLast();
+                    levelDBIteratorSeek(iter, startingKeyPtr, len);
+                    if (!levelDBIteratorIsValid(iter)) {
+                        levelDBSeekToLast(iter);
+                        //iter->SeekToLast();
                     }
                     break;
                 }
                 i--;
             };
-            free(startingKeyPtr);
-            if (!iter->Valid())
+            //free(startingKeyPtr);
+            if (!levelDBIteratorIsValid(iter)) {
                 return;
-            
-            lkey = iter->key();
-            if (startingKey.size() && prefix) {
-                signed int cmp = memcmp(lkey.data(), startingKey.data(), startingKey.size());
+            }
+            char *iKey;
+            int iKeyLength;
+            levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
+            //lkey = iter->key();
+            if (len > 0 && prefix != nil) {
+                signed int cmp = memcmp(iKey, startingKeyPtr, len);
                 if (cmp > 0) {
-                    iter->Prev();
+                    levelDBIteratorPrevious(iter);
                 }
             }
         } else {
             // Otherwise, we start at the provided prefix
-            iter->Seek(startingKey);
+            levelDBIteratorSeek(iter, [startingKey UTF8String], len);
         }
     } else if (key) {
-        iter->Seek(KeyFromStringOrData(key));
+        levelDBIteratorSeek(iter, [key UTF8String], key.length);
     } else if (backward) {
-        iter->SeekToLast();
+        levelDBSeekToLast(iter);
     } else {
-        iter->SeekToFirst();
+        levelDBSeekToFirst(iter);
     }
-}*/
+}
 
 - (void)enumerateKeysUsingBlock:(LevelDBKeyBlock)block {
     [self enumerateKeysBackward:false
                   startingAtKey:nil
             filteredByPredicate:nil
                       andPrefix:nil
-                   withSnapshot:nil
                      usingBlock:block];
 }
 
 - (void)enumerateKeysBackward:(BOOL)backward
-                startingAtKey:(id)key
+                startingAtKey:(NSString *)key
           filteredByPredicate:(NSPredicate *)predicate
-                    andPrefix:(id)prefix
+                    andPrefix:(NSString *)prefix
                    usingBlock:(LevelDBKeyBlock)block {
+    AssertDBExists(_db);
+    void *iter = levelDBNewIterator(_db);
+    BOOL stop = false;
+    //NSData *prefixData = EnsureNSData(prefix);
+    LevelDBKeyValueBlock iterate = (predicate != nil)
+    ? ^(NSString *key, id value, BOOL *stop) {
+        if ([predicate evaluateWithObject:value]) {
+            block(key, stop);
+        }
+    }
+    : ^(NSString *key, id value, BOOL *stop) {
+        block(key, stop);
+    };
     
-    [self enumerateKeysBackward:backward
-                  startingAtKey:key
-            filteredByPredicate:predicate
-                      andPrefix:prefix
-                   withSnapshot:nil
-                     usingBlock:block];
+    for ([self _startIterator:iter backward:backward prefix:prefix start:key]
+         ; levelDBIteratorIsValid(iter)
+         ; levelDBMoveCursor(iter, backward)) {
+        char *iKey;
+        int iKeyLength;
+        levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
+        if (prefix && memcmp(iKey, [prefix UTF8String], MIN((size_t)prefix.length, iKeyLength)) != 0) {
+            break;
+        }
+        NSString *iKeyString = [NSString stringWithUTF8String:iKey];
+        void *iData;
+        int iDataLength;
+        levelDBIteratorGetValue(iter, &iData, &iDataLength);
+        id v = (predicate == nil) ? nil : _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
+        iterate(iKeyString, v, &stop);
+        if (stop) break;
+    }
+    levelDBDeleteIterator(iter);
 }
 
 /*- (void)enumerateKeysBackward:(BOOL)backward
-                startingAtKey:(id)key
+                startingAtKey:(NSString *)key
          filteredByPredicate:(NSPredicate *)predicate
-                     andPrefix:(id)prefix
+                     andPrefix:(NSString *)prefix
                   withSnapshot:(LDBSnapshot *)snapshot
                    usingBlock:(LevelDBKeyBlock)block {
     
@@ -616,15 +648,14 @@ static leveldb::WriteOptions writeOptions;
                             startingAtKey:nil
                       filteredByPredicate:nil
                                 andPrefix:nil
-                             withSnapshot:nil
                                usingBlock:block];
 }
 
 - (void)enumerateKeysAndObjectsBackward:(BOOL)backward
                                  lazily:(BOOL)lazily
-                          startingAtKey:(id)key
+                          startingAtKey:(NSString *)key
                     filteredByPredicate:(NSPredicate *)predicate
-                              andPrefix:(id)prefix
+                              andPrefix:(NSString *)prefix
                              usingBlock:(id)block {
     
     [self enumerateKeysAndObjectsBackward:backward
@@ -632,15 +663,14 @@ static leveldb::WriteOptions writeOptions;
                             startingAtKey:key
                       filteredByPredicate:predicate
                                 andPrefix:prefix
-                             withSnapshot:nil
                                usingBlock:block];
 }
 
 /*- (void) enumerateKeysAndObjectsBackward:(BOOL)backward
                                   lazily:(BOOL)lazily
-                           startingAtKey:(id)key
+                           startingAtKey:(NSString *)key
                      filteredByPredicate:(NSPredicate *)predicate
-                               andPrefix:(id)prefix
+                               andPrefix:(NSString *)prefix
                             withSnapshot:(LDBSnapshot *)snapshot
                               usingBlock:(id)block{
     
