@@ -570,7 +570,6 @@ static leveldb::WriteOptions writeOptions;
     AssertDBExists(_db);
     void *iter = levelDBNewIterator(_db);
     BOOL stop = false;
-    //NSData *prefixData = EnsureNSData(prefix);
     LevelDBKeyValueBlock iterate = (predicate != nil)
     ? ^(NSString *key, id value, BOOL *stop) {
         if ([predicate evaluateWithObject:value]) {
@@ -590,7 +589,7 @@ static leveldb::WriteOptions writeOptions;
         if (prefix && memcmp(iKey, [prefix UTF8String], MIN((size_t)prefix.length, iKeyLength)) != 0) {
             break;
         }
-        NSString *iKeyString = [NSString stringWithUTF8String:iKey];
+        NSString *iKeyString = [[NSString alloc] initWithBytes:iKey length:iKeyLength encoding:NSUTF8StringEncoding];
         void *iData;
         int iDataLength;
         levelDBIteratorGetValue(iter, &iData, &iDataLength);
@@ -601,48 +600,7 @@ static leveldb::WriteOptions writeOptions;
     levelDBDeleteIterator(iter);
 }
 
-/*- (void)enumerateKeysBackward:(BOOL)backward
-                startingAtKey:(NSString *)key
-         filteredByPredicate:(NSPredicate *)predicate
-                     andPrefix:(NSString *)prefix
-                  withSnapshot:(LDBSnapshot *)snapshot
-                   usingBlock:(LevelDBKeyBlock)block {
-    
-    AssertDBExists(db);
-    MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
-    leveldb::Iterator* iter = ((leveldb::DB *)db)->NewIterator(*readOptionsPtr);
-    leveldb::Slice lkey;
-    BOOL stop = false;
-    
-    NSData *prefixData = EnsureNSData(prefix);
-    
-    LevelDBKeyValueBlock iterate = (predicate != nil)
-    ? ^(LevelDBKey *lk, id value, BOOL *stop) {
-        if ([predicate evaluateWithObject:value])
-            block(lk, stop);
-    }
-    : ^(LevelDBKey *lk, id value, BOOL *stop) {
-        block(lk, stop);
-    };
-    
-    for ([self _startIterator:iter backward:backward prefix:prefix start:key]
-         ; iter->Valid()
-         ; MoveCursor(iter, backward)) {
-        
-        lkey = iter->key();
-        if (prefix && memcmp(lkey.data(), [prefixData bytes], MIN((size_t)[prefixData length], lkey.size())) != 0)
-            break;
-        
-        LevelDBKey lk = GenericKeyFromSlice(lkey);
-        id v = (predicate == nil) ? nil : DecodeFromSlice(iter->value(), &lk, _decoder);
-        iterate(&lk, v, &stop);
-        if (stop) break;
-    }
-    
-    delete iter;
-}*/
-
-- (void) enumerateKeysAndObjectsUsingBlock:(LevelDBKeyValueBlock)block {
+- (void)enumerateKeysAndObjectsUsingBlock:(LevelDBKeyValueBlock)block {
     [self enumerateKeysAndObjectsBackward:false
                                    lazily:false
                             startingAtKey:nil
