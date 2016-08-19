@@ -340,10 +340,7 @@ static leveldb::WriteOptions writeOptions;
 #pragma mark - Getters
 
 - (id)objectForKey:(NSString *)key {
-    //return [self objectForKey:key withSnapshot:nil];
-    
     AssertDBExists(_db);
-    //AssertKeyType(key);
     void *outData;
     int outDataLength;
     int status = levelDBGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
@@ -351,54 +348,11 @@ static leveldb::WriteOptions writeOptions;
         NSLog(@"Problem retrieving value for key '%@' from database", key);
         return nil;
     }
-    
-    //#define DataFromSlice(_slice_)              [NSData dataWithBytes:_slice_.data() length:_slice_.size()]
-    
-    //#define DecodeFromSlice(_slice_, _key_, _d) _d(_key_, DataFromSlice(_slice_))
     NSData *data = [NSData dataWithBytes:outData length:outDataLength];
     return _decoder(key, data);
-    
-    //return nil;
-    /*std::string v_string;
-     MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
-     leveldb::Slice k = KeyFromStringOrData(key);
-     leveldb::Status status = ((leveldb::DB *)db)->Get(*readOptionsPtr, k, &v_string);
-     
-     if(!status.ok()) {
-     if(!status.IsNotFound())
-     NSLog(@"Problem retrieving value for key '%@' from database: %s", key, status.ToString().c_str());
-     return nil;
-     }
-     
-     LevelDBKey lkey = GenericKeyFromSlice(k);
-     return DecodeFromSlice(v_string, &lkey, _decoder);
-     return nil;
-     */
 }
 
-/*
-- (id) objectForKey:(id)key
-       withSnapshot:(LDBSnapshot *)snapshot {
-    
-    AssertDBExists(db);
-    AssertKeyType(key);
-    /*std::string v_string;
-    MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
-    leveldb::Slice k = KeyFromStringOrData(key);
-    leveldb::Status status = ((leveldb::DB *)db)->Get(*readOptionsPtr, k, &v_string);
-    
-    if(!status.ok()) {
-        if(!status.IsNotFound())
-            NSLog(@"Problem retrieving value for key '%@' from database: %s", key, status.ToString().c_str());
-        return nil;
-    }
-    
-    LevelDBKey lkey = GenericKeyFromSlice(k);
-    return DecodeFromSlice(v_string, &lkey, _decoder);
-    return nil;
-}*/
-
-- (id) objectsForKeys:(NSArray *)keys notFoundMarker:(id)marker {
+- (id)objectsForKeys:(NSArray *)keys notFoundMarker:(id)marker {
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:keys.count];
     [keys enumerateObjectsUsingBlock:^(id objId, NSUInteger idx, BOOL *stop) {
         id object = [self objectForKey:objId];
@@ -407,13 +361,6 @@ static leveldb::WriteOptions writeOptions;
         [result insertObject:object atIndex:idx];
     }];
     return [NSArray arrayWithArray:result];
-}
-- (id) valueForKey:(NSString *)key {
-    if ([key characterAtIndex:0] == '@') {
-        return [super valueForKey:[key stringByReplacingCharactersInRange:(NSRange){0, 1}
-                                                               withString:@""]];
-    } else
-        return [self objectForKey:key];
 }
 
 - (id)objectForKeyedSubscript:(id)key {
@@ -424,32 +371,21 @@ static leveldb::WriteOptions writeOptions;
     return [self objectExistsForKey:key withSnapshot:nil];
 }
 
-/*- (BOOL)objectExistsForKey:(id)key
-               withSnapshot:(LDBSnapshot *)snapshot {
-    
-    AssertDBExists(db);
-    AssertKeyType(key);
-    std::string v_string;
-    MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
-    leveldb::Slice k = KeyFromStringOrData(key);
-    leveldb::Status status = ((leveldb::DB *)db)->Get(*readOptionsPtr, k, &v_string);
-    
-    if (!status.ok()) {
-        if (status.IsNotFound())
-            return false;
-        else {
-            NSLog(@"Problem retrieving value for key '%@' from database: %s", key, status.ToString().c_str());
-            return NULL;
-        }
-    } else
-        return true;
-}*/
-
 #pragma mark - Removers
 
 - (void)removeObjectForKey:(id)key {
     AssertDBExists(_db);
-    AssertKeyType(key);
+    //AssertKeyType(key);
+    
+    //void *outData;
+    //int outDataLength;
+    int status = levelDBDelete(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
+    if (status) {
+        NSLog(@"Problem removing object with key: %@ in database", key);
+    }
+    //NSData *data = [NSData dataWithBytes:outData length:outDataLength];
+    //return _decoder(key, data);
+    
     /*
     leveldb::Slice k = KeyFromStringOrData(key);
     leveldb::Status status = ((leveldb::DB *)db)->Delete(writeOptions, k);

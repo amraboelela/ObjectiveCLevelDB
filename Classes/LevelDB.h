@@ -217,7 +217,7 @@ NSString *getLibraryPath();
 /**
  Same as `[self objectForKey:]`
  */
-- (id) valueForKey:(NSString *)key;
+//- (id) valueForKey:(NSString *)key;
 
 /**
  Return an array containing the values associated with the provided list of keys.
@@ -245,7 +245,7 @@ NSString *getLibraryPath();
  
  @param key The key to remove from the database
  */
-- (void) removeObjectForKey:(id)key;
+- (void)removeObjectForKey:(id)key;
 
 /**
  Remove a set of keys (and their associated values) from the database
@@ -257,14 +257,14 @@ NSString *getLibraryPath();
 /**
  Remove all objects from the database
  */
-- (void) removeAllObjects;
+- (void)removeAllObjects;
 
 /**
  Remove all objects prefixed with a given value (`NSString` or `NSData`)
  
  @param prefix The key prefix used to remove all matching keys (of type `NSString` or `NSData`)
  */
-- (void) removeAllObjectsWithPrefix:(id)prefix;
+- (void)removeAllObjectsWithPrefix:(id)prefix;
 
 #pragma mark - Selection
 
@@ -273,21 +273,21 @@ NSString *getLibraryPath();
  
  @warning This shouldn't be used with very large databases, since every key will be stored in memory
  */
-- (NSArray *) allKeys;
+- (NSArray *)allKeys;
 
 /**
  Return an array of key for which the value match the given predicate
  
  @param predicate A `NSPredicate` instance tested against the database's values to retrieve the corresponding keys
  */
-- (NSArray *) keysByFilteringWithPredicate:(NSPredicate *)predicate;
+- (NSArray *)keysByFilteringWithPredicate:(NSPredicate *)predicate;
 
 /**
  Return a dictionary with all key-value pairs, where values match the given predicate
  
  @param predicate A `NSPredicate` instance tested against the database's values to retrieve the corresponding key-value pairs
  */
-- (NSDictionary *) dictionaryByFilteringWithPredicate:(NSPredicate *)predicate;
+- (NSDictionary *)dictionaryByFilteringWithPredicate:(NSPredicate *)predicate;
 
 /**
  Return an retained LDBSnapshot instance for this database
@@ -307,7 +307,7 @@ NSString *getLibraryPath();
  
  @param block The enumeration block used when iterating over all the keys.
  */
-- (void) enumerateKeysUsingBlock:(LevelDBKeyBlock)block;
+- (void)enumerateKeysUsingBlock:(LevelDBKeyBlock)block;
 
 /**
  Enumerate over the keys in the database, in direct or backward order, with some options to control the keys iterated over
@@ -318,11 +318,11 @@ NSString *getLibraryPath();
  @param prefix A `NSString` or `NSData` prefix used to filter the keys. If provided, only the keys prefixed with this value will be iterated over.
  @param block The enumeration block used when iterating over all the keys. It takes two arguments: the first is a pointer to a `LevelDBKey` struct. You can convert this to a `NSString` or `NSData` instance, using `NSDataFromLevelDBKey(LevelDBKey *key)` and `NSStringFromLevelDBKey(LevelDBKey *key)` respectively. The second arguments to the block is a `BOOL *` that can be used to stop enumeration at any time (e.g. `*stop = TRUE;`).
  */
-- (void) enumerateKeysBackward:(BOOL)backward
-                 startingAtKey:(id)key
-           filteredByPredicate:(NSPredicate *)predicate
-                     andPrefix:(id)prefix
-                    usingBlock:(LevelDBKeyBlock)block;
+- (void)enumerateKeysBackward:(BOOL)backward
+                startingAtKey:(id)key
+          filteredByPredicate:(NSPredicate *)predicate
+                    andPrefix:(id)prefix
+                   usingBlock:(LevelDBKeyBlock)block;
 
 
 /**
@@ -332,7 +332,7 @@ NSString *getLibraryPath();
  
  @param block The enumeration block used when iterating over all the key value pairs.
  */
-- (void) enumerateKeysAndObjectsUsingBlock:(LevelDBKeyValueBlock)block;
+- (void)enumerateKeysAndObjectsUsingBlock:(LevelDBKeyValueBlock)block;
 
 /**
  Enumerate over the keys in the database, in direct or backward order, with some options to control the keys iterated over
@@ -343,11 +343,11 @@ NSString *getLibraryPath();
  @param prefix A `NSString` or `NSData` prefix used to filter the keys. If provided, only the keys prefixed with this value will be iterated over.
  @param block The enumeration block used when iterating over all the keys. It takes three arguments: the first is a pointer to a `LevelDBKey` struct. You can convert this to a `NSString` or `NSData` instance, using `NSDataFromLevelDBKey(LevelDBKey *key)` and `NSStringFromLevelDBKey(LevelDBKey *key)` respectively. The second argument is the value associated with the key. The third arguments to the block is a `BOOL *` that can be used to stop enumeration at any time (e.g. `*stop = TRUE;`).
  */
-- (void) enumerateKeysAndObjectsBackward:(BOOL)backward
-                                  lazily:(BOOL)lazily
-                           startingAtKey:(id)key
-                     filteredByPredicate:(NSPredicate *)predicate
-                               andPrefix:(id)prefix
-                              usingBlock:(id)block;
+- (void)enumerateKeysAndObjectsBackward:(BOOL)backward
+                                 lazily:(BOOL)lazily
+                          startingAtKey:(id)key
+                    filteredByPredicate:(NSPredicate *)predicate
+                              andPrefix:(id)prefix
+                             usingBlock:(id)block;
 
 @end
