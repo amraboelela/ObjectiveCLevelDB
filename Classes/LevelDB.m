@@ -264,8 +264,19 @@ static leveldb::WriteOptions writeOptions;
 
 #pragma mark - Setters
 
-/*
-- (void)setObject:(id)value forKey:(id)key {
+- (void)setObject:(id)value forKey:(NSString *)key {
+    AssertDBExists(_db);
+    //AssertKeyType(key);
+    NSParameterAssert(value != nil);
+    //LevelDBKey lkey = KeyFromString(key);
+    NSData *data = _encoder(key, value);
+    //[self setObject:value forKey:key];
+    
+    int status = levelDBPut(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [data bytes], [data length]);
+    if (status) {
+        NSLog(@"Problem storing key/value pair in database");
+    }
+    /*
     AssertDBExists(_db);
     AssertKeyType(key);
     NSParameterAssert(value != nil);
@@ -281,10 +292,11 @@ static leveldb::WriteOptions writeOptions;
     
     if(!status.ok()) {
         NSLog(@"Problem storing key/value pair in database: %s", status.ToString().c_str());
-    }
+    }*/
     
-}*/
+}
 
+/*
 - (void) setValue:(id)value forKey:(NSString *)key {
     AssertDBExists(_db);
     //AssertKeyType(key);
@@ -292,11 +304,12 @@ static leveldb::WriteOptions writeOptions;
     //LevelDBKey lkey = KeyFromString(key);
     NSData *data = _encoder(key, value);
     //[self setObject:value forKey:key];
-}
+}*/
 
 - (void) setObject:(id)value forKeyedSubscript:(id)key {
     [self setObject:value forKey:key];
 }
+
 - (void) addEntriesFromDictionary:(NSDictionary *)dictionary {
     [dictionary enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         [self setObject:obj forKey:key];
@@ -326,8 +339,41 @@ static leveldb::WriteOptions writeOptions;
 
 #pragma mark - Getters
 
-- (id) objectForKey:(id)key {
-    return [self objectForKey:key withSnapshot:nil];
+- (id)objectForKey:(NSString *)key {
+    //return [self objectForKey:key withSnapshot:nil];
+    
+    AssertDBExists(_db);
+    //AssertKeyType(key);
+    void *outData;
+    int outDataLength;
+    int status = levelDBGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
+    if (status) {
+        NSLog(@"Problem retrieving value for key '%@' from database", key);
+        return nil;
+    }
+    
+    //#define DataFromSlice(_slice_)              [NSData dataWithBytes:_slice_.data() length:_slice_.size()]
+    
+    //#define DecodeFromSlice(_slice_, _key_, _d) _d(_key_, DataFromSlice(_slice_))
+    NSData *data = [NSData dataWithBytes:outData length:outDataLength];
+    return _decoder(key, data);
+    
+    //return nil;
+    /*std::string v_string;
+     MaybeAddSnapshotToOptions(readOptions, readOptionsPtr, snapshot);
+     leveldb::Slice k = KeyFromStringOrData(key);
+     leveldb::Status status = ((leveldb::DB *)db)->Get(*readOptionsPtr, k, &v_string);
+     
+     if(!status.ok()) {
+     if(!status.IsNotFound())
+     NSLog(@"Problem retrieving value for key '%@' from database: %s", key, status.ToString().c_str());
+     return nil;
+     }
+     
+     LevelDBKey lkey = GenericKeyFromSlice(k);
+     return DecodeFromSlice(v_string, &lkey, _decoder);
+     return nil;
+     */
 }
 
 /*

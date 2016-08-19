@@ -164,24 +164,24 @@ NSString *getLibraryPath();
  @param value The value to put in the database
  @param key The key at which the value can be found
  */
-- (void) setObject:(id)value forKey:(id)key;
+- (void)setObject:(id)value forKey:(NSString *)key;
 
 /**
  Same as `[self setObject:forKey:]`
  */
-- (void) setObject:(id)value forKeyedSubscript:(id)key;
+- (void)setObject:(id)value forKeyedSubscript:(id)key;
 
 /**
  Same as `[self setObject:forKey:]`
  */
-- (void) setValue:(id)value forKey:(NSString *)key ;
+//- (void)setValue:(id)value forKey:(NSString *)key ;
 
 /**
  Take all key-value pairs in the provided dictionary and insert them in the database
  
  @param dictionary A dictionary from which key-value pairs will be inserted
  */
-- (void) addEntriesFromDictionary:(NSDictionary *)dictionary;
+- (void)addEntriesFromDictionary:(NSDictionary *)dictionary;
 
 #pragma mark - Write batches
 
@@ -207,7 +207,7 @@ NSString *getLibraryPath();
  
  @param key The key to retrieve from the database
  */
-- (id) objectForKey:(id)key;
+- (id)objectForKey:(NSString *)key;
 
 /**
  Same as `[self objectForKey:]`
