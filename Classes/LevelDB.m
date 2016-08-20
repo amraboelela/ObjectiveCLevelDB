@@ -138,7 +138,7 @@ LevelDBOptions MakeLevelDBOptions() {
     void *outData;
     int outDataLength;
     int status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
-    if (status) {
+    if (status != 0) {
         return nil;
     }
     NSData *data = [NSData dataWithBytes:outData length:outDataLength];
@@ -160,7 +160,16 @@ LevelDBOptions MakeLevelDBOptions() {
 }
 
 - (BOOL)objectExistsForKey:(NSString *)key {
-    return [self objectExistsForKey:key];
+    AssertDBExists(_db);
+    
+    void *outData;
+    int outDataLength;
+    int status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
+    if (status != 0) {
+        return false;
+    } else {
+        return true;
+    }
 }
 
 #pragma mark - Removers
@@ -266,10 +275,10 @@ LevelDBOptions MakeLevelDBOptions() {
         // If a prefix is provided and the iteration is backwards
         // we need to start on the next key (maybe discarding the first iteration)
         if (backward) {
-            signed long long i = len - 1; //startingKey.size() - 1;
+            signed long long i = len - 1;
 
-            char startingKeyPtr[len];
-            [startingKey getCharacters:startingKeyPtr range:NSMakeRange(0, len)];
+            char *startingKeyPtr = malloc(len);
+            memcpy(startingKeyPtr, [startingKey UTF8String], len);
             unsigned char *keyChar;
             while (1) {
                 if (i < 0) {
@@ -287,6 +296,7 @@ LevelDBOptions MakeLevelDBOptions() {
                 }
                 i--;
             };
+            free(startingKeyPtr);
             if (!levelDBIteratorIsValid(iter)) {
                 return;
             }
@@ -294,7 +304,7 @@ LevelDBOptions MakeLevelDBOptions() {
             int iKeyLength;
             levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
             if (len > 0 && prefix != nil) {
-                signed int cmp = memcmp(iKey, startingKeyPtr, len);
+                signed int cmp = memcmp(iKey, [startingKey UTF8String], len);
                 if (cmp > 0) {
                     levelDBIteratorMoveBackward(iter);
                 }
