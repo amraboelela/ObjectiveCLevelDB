@@ -10,30 +10,23 @@
 //
 
 #import "LevelDB.h"
-//#import "LDBSnapshot.h"
-//#import "LDBWriteBatch.h"
 
 #import <leveldb/leveldb.h>
-/*#import <leveldb/options.h>
-#import <leveldb/cache.h>
-#import <leveldb/filter_policy.h>
-#import <leveldb/write_batch.h>
-*/
 
 #include "Common.h"
 
-/*#define MaybeAddSnapshotToOptions(_from_, _to_, _snap_) \
-leveldb::ReadOptions __to_;\
-leveldb::ReadOptions * _to_ = &__to_;\
-if (_snap_ != nil) { \
-_to_->fill_cache = _from_.fill_cache; \
-_to_->snapshot = [_snap_ getSnapshot]; \
-} else \
-_to_ = &_from_;
-*/
-
 #define AssertDBExists(_db_) \
 NSAssert(_db_ != NULL, @"Database reference is not existent (it has probably been closed)");
+
+#pragma mark - Static functions
+
+static void _seekToFirstOrKey(void *iter, NSString *key) {
+    (key != nil) ? levelDBIteratorSeek(iter, [key UTF8String], key.length) : levelDBIteratorMoveToFirst(iter);
+}
+
+static void _moveCursor(void *iter, bool backward) {
+    backward ? levelDBIteratorMoveBackward(iter) : levelDBIteratorMoveForward(iter);
+}
 
 #pragma mark - Public functions
 
@@ -42,23 +35,21 @@ NSString *getLibraryPath() {
     return [paths objectAtIndex:0];
 }
 
-static void seekToFirstOrKey(void *iter, NSString *key) {
-    (key != nil) ? levelDBIteratorSeek(iter, [key UTF8String], key.length) : levelDBIteratorMoveToFirst(iter);
-}
-
 NSString * const kLevelDBChangeType         = @"changeType";
 NSString * const kLevelDBChangeTypePut      = @"put";
 NSString * const kLevelDBChangeTypeDelete   = @"del";
 NSString * const kLevelDBChangeValue        = @"value";
 NSString * const kLevelDBChangeKey          = @"key";
 
+/*
 LevelDBOptions MakeLevelDBOptions() {
     return (LevelDBOptions) {true, true, false, false, true, 0, 0};
 }
-
+ 
 @interface LevelDB()
 
 @end
+*/
 
 @implementation LevelDB
 
@@ -67,31 +58,22 @@ LevelDBOptions MakeLevelDBOptions() {
 @synthesize encoder=_encoder;
 @synthesize decoder=_decoder;
 
-+ (LevelDBOptions) makeOptions {
-    return MakeLevelDBOptions();
-}
-- (id) initWithPath:(NSString *)path andName:(NSString *)name {
-    LevelDBOptions opts = MakeLevelDBOptions();
-    return [self initWithPath:path name:name andOptions:opts];
-}
-- (id) initWithPath:(NSString *)path name:(NSString *)name andOptions:(LevelDBOptions)opts {
+- (id)initWithPath:(NSString *)path name:(NSString *)name {
     self = [super init];
     if (self) {
         self.name = name;
         self.path = path;
         
-        if (opts.createIntermediateDirectories) {
-            NSString *dirpath = [path stringByDeletingLastPathComponent];
-            NSFileManager *fm = [NSFileManager defaultManager];
-            NSError *crError;
-            BOOL success = [fm createDirectoryAtPath:dirpath
-                         withIntermediateDirectories:true
-                                          attributes:nil
-                                               error:&crError];
-            if (!success) {
-                NSLog(@"Problem creating parent directory: %@", crError);
-                return nil;
-            }
+        NSString *dirpath = [path stringByDeletingLastPathComponent];
+        NSFileManager *fm = [NSFileManager defaultManager];
+        NSError *crError;
+        BOOL success = [fm createDirectoryAtPath:dirpath
+                     withIntermediateDirectories:true
+                                      attributes:nil
+                                           error:&crError];
+        if (!success) {
+            NSLog(@"Problem creating parent directory: %@", crError);
+            return nil;
         }
         _db = levelDBOpen([_path UTF8String]);
         
@@ -114,13 +96,8 @@ LevelDBOptions MakeLevelDBOptions() {
 }
 
 + (id)databaseInLibraryWithName:(NSString *)name {
-    LevelDBOptions opts = MakeLevelDBOptions();
-    return [self databaseInLibraryWithName:name andOptions:opts];
-}
-+ (id)databaseInLibraryWithName:(NSString *)name
-                      andOptions:(LevelDBOptions)opts {
     NSString *path = [getLibraryPath() stringByAppendingPathComponent:name];
-    LevelDB *ldb = [[[self alloc] initWithPath:path name:name andOptions:opts] autorelease];
+    LevelDB *ldb = [[[self alloc] initWithPath:path name:name] autorelease];
     return ldb;
 }
 
@@ -144,11 +121,11 @@ LevelDBOptions MakeLevelDBOptions() {
     }
 }
 
-- (void) setObject:(id)value forKeyedSubscript:(NSString *)key {
+- (void)setObject:(id)value forKeyedSubscript:(NSString *)key {
     [self setObject:value forKey:key];
 }
 
-- (void) addEntriesFromDictionary:(NSDictionary *)dictionary {
+- (void)addEntriesFromDictionary:(NSDictionary *)dictionary {
     [dictionary enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
         [self setObject:obj forKey:key];
     }];
@@ -162,11 +139,14 @@ LevelDBOptions MakeLevelDBOptions() {
     int outDataLength;
     int status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
     if (status) {
-        NSLog(@"Problem retrieving value for key '%@' from database", key);
         return nil;
     }
     NSData *data = [NSData dataWithBytes:outData length:outDataLength];
     return _decoder(key, data);
+}
+
+- (id)objectForKeyedSubscript:(id)key {
+    return [self objectForKey:key];
 }
 
 - (id)objectsForKeys:(NSArray *)keys notFoundMarker:(id)marker {
@@ -174,7 +154,6 @@ LevelDBOptions MakeLevelDBOptions() {
     [keys enumerateObjectsUsingBlock:^(id objId, NSUInteger idx, BOOL *stop) {
         id object = [self objectForKey:objId];
         if (object == nil) object = marker;
-        //result[idx] = object;
         [result insertObject:object atIndex:idx];
     }];
     return [NSArray arrayWithArray:result];
@@ -212,7 +191,7 @@ LevelDBOptions MakeLevelDBOptions() {
     const void *prefixPtr = [prefix UTF8String];
     size_t prefixLen = prefix.length;
     
-    for (seekToFirstOrKey(iter, prefix); levelDBIteratorIsValid(iter); levelDBIteratorMoveForward(iter)) {
+    for (_seekToFirstOrKey(iter, prefix); levelDBIteratorIsValid(iter); levelDBIteratorMoveForward(iter)) {
         char *iKey;
         int iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
@@ -237,7 +216,8 @@ LevelDBOptions MakeLevelDBOptions() {
 
 - (NSArray *)keysByFilteringWithPredicate:(NSPredicate *)predicate {
     NSMutableArray *keys = [[[NSMutableArray alloc] init] autorelease];
-    [self enumerateKeysAndObjectsBackward:NO lazily:NO
+    [self enumerateKeysAndObjectsBackward:NO
+                                   lazily:NO
                             startingAtKey:nil
                       filteredByPredicate:predicate
                                 andPrefix:nil
@@ -249,7 +229,8 @@ LevelDBOptions MakeLevelDBOptions() {
 
 - (NSDictionary *)dictionaryByFilteringWithPredicate:(NSPredicate *)predicate {
     NSMutableDictionary *results = [NSMutableDictionary dictionary];
-    [self enumerateKeysAndObjectsBackward:NO lazily:NO
+    [self enumerateKeysAndObjectsBackward:NO
+                                   lazily:NO
                             startingAtKey:nil
                       filteredByPredicate:predicate
                                 andPrefix:nil
@@ -285,7 +266,6 @@ LevelDBOptions MakeLevelDBOptions() {
         // If a prefix is provided and the iteration is backwards
         // we need to start on the next key (maybe discarding the first iteration)
         if (backward) {
-            
             signed long long i = len - 1; //startingKey.size() - 1;
 
             char startingKeyPtr[len];
@@ -358,9 +338,7 @@ LevelDBOptions MakeLevelDBOptions() {
         block(key, stop);
     };
     
-    for ([self _startIterator:iter backward:backward prefix:prefix start:key];
-         levelDBIteratorIsValid(iter);
-         backward ? levelDBIteratorMoveBackward(iter) : levelDBIteratorMoveForward(iter)) {
+    for ([self _startIterator:iter backward:backward prefix:prefix start:key]; levelDBIteratorIsValid(iter); _moveCursor(iter, backward)) {
         char *iKey;
         int iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
@@ -373,7 +351,72 @@ LevelDBOptions MakeLevelDBOptions() {
         levelDBIteratorGetValue(iter, &iData, &iDataLength);
         id v = (predicate == nil) ? nil : _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
         iterate(iKeyString, v, &stop);
-        if (stop) break;
+        if (stop) {
+            break;
+        }
+    }
+    levelDBIteratorDelete(iter);
+}
+
+- (void)enumerateKeysAndObjectsBackward:(BOOL)backward
+                                 lazily:(BOOL)lazily
+                          startingAtKey:(NSString *)key
+                    filteredByPredicate:(NSPredicate *)predicate
+                              andPrefix:(NSString *)prefix
+                             usingBlock:(id)block {
+    
+    AssertDBExists(_db);
+    void *iter = levelDBIteratorNew(_db);
+    BOOL stop = false;
+    
+    LevelDBLazyKeyValueBlock iterate = (predicate != nil)
+    
+    // If there is a predicate:
+    ? ^ (NSString *key, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
+        // We need to get the value, whether the `lazily` flag was set or not
+        id value = valueGetter();
+        
+        // If the predicate yields positive, we call the block
+        if ([predicate evaluateWithObject:value]) {
+            if (lazily) {
+                ((LevelDBLazyKeyValueBlock)block)(key, valueGetter, stop);
+            } else {
+                ((LevelDBKeyValueBlock)block)(key, value, stop);
+            }
+        }
+    }
+    
+    // Otherwise, we call the block
+    : ^ (NSString *key, LevelDBValueGetterBlock valueGetter, BOOL *stop) {
+        if (lazily) {
+            ((LevelDBLazyKeyValueBlock)block)(key, valueGetter, stop);
+        } else {
+            ((LevelDBKeyValueBlock)block)(key, valueGetter(), stop);
+        }
+    };
+    LevelDBValueGetterBlock getter;
+        
+    for ([self _startIterator:iter backward:backward prefix:prefix start:key]; levelDBIteratorIsValid(iter); _moveCursor(iter, backward)) {
+        
+        char *iKey;
+        int iKeyLength;
+        levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
+        if (prefix && memcmp(iKey, [prefix UTF8String], MIN((size_t)prefix.length, iKeyLength)) != 0) {
+            break;
+        }
+        NSString *iKeyString = [[NSString alloc] initWithBytes:iKey length:iKeyLength encoding:NSUTF8StringEncoding];
+        
+        getter = ^ id {
+            void *iData;
+            int iDataLength;
+            levelDBIteratorGetValue(iter, &iData, &iDataLength);
+            id v = (predicate == nil) ? nil : _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
+            return v;
+        };
+        iterate(iKeyString, getter, &stop);
+        if (stop) {
+            break;
+        }
     }
     levelDBIteratorDelete(iter);
 }
@@ -387,6 +430,7 @@ LevelDBOptions MakeLevelDBOptions() {
                                usingBlock:block];
 }
 
+/*
 - (void)enumerateKeysAndObjectsBackward:(BOOL)backward
                                  lazily:(BOOL)lazily
                           startingAtKey:(NSString *)key
@@ -400,7 +444,7 @@ LevelDBOptions MakeLevelDBOptions() {
                       filteredByPredicate:predicate
                                 andPrefix:prefix
                                usingBlock:block];
-}
+}*/
 
 #pragma mark - Bookkeeping
 

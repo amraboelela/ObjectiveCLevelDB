@@ -42,18 +42,16 @@ FOUNDATION_EXPORT NSString * const kLevelDBChangeTypeDelete;
 FOUNDATION_EXPORT NSString * const kLevelDBChangeValue;
 FOUNDATION_EXPORT NSString * const kLevelDBChangeKey;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
     
-int lockOrUnlock(int fd, bool lock);
-//NSString *NSStringFromLevelDBKey(LevelDBKey * key);
-//NSData   *NSDataFromLevelDBKey  (LevelDBKey * key);
+//int lockOrUnlock(int fd, bool lock);
 NSString *getLibraryPath();
     
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//}
+//#endif
 
 @interface LevelDB : NSObject {
     NSString *_path;
@@ -82,12 +80,12 @@ NSString *getLibraryPath();
 /**
  A boolean value indicating whether write operations should be synchronous (flush to disk before returning).
  */
-@property (nonatomic) BOOL safe;
+//@property (nonatomic) BOOL safe;
 
 /**
  A boolean value indicating whether read operations should try to use the configured cache (defaults to true).
  */
-@property (nonatomic) BOOL useCache;
+//@property (nonatomic) BOOL useCache;
 
 /**
  A boolean readonly value indicating whether the database is closed or not.
@@ -107,7 +105,7 @@ NSString *getLibraryPath();
 /**
  A class method that returns a LevelDBOptions struct, which can be modified to finetune leveldb
  */
-+ (LevelDBOptions) makeOptions;
+//+ (LevelDBOptions) makeOptions;
 
 /**
  A class method that returns an autoreleased instance of LevelDB with the given name, inside the Library folder
@@ -122,7 +120,7 @@ NSString *getLibraryPath();
  @param name The database's filename
  @param opts A LevelDBOptions struct with options for fine tuning leveldb
  */
-+ (id)databaseInLibraryWithName:(NSString *)name andOptions:(LevelDBOptions)opts;
+//+ (id)databaseInLibraryWithName:(NSString *)name andOptions:(LevelDBOptions)opts;
 
 /**
  Initialize a leveldb instance
@@ -139,7 +137,7 @@ NSString *getLibraryPath();
  @param name the filename of the database file on disk
  @param opts A LevelDBOptions struct with options for fine tuning leveldb
  */
-- (id)initWithPath:(NSString *)path name:(NSString *)name andOptions:(LevelDBOptions)opts;
+//- (id)initWithPath:(NSString *)path name:(NSString *)name andOptions:(LevelDBOptions)opts;
 
 
 /**
