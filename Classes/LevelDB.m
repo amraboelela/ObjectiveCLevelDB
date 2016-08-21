@@ -420,7 +420,7 @@ LevelDBOptions MakeLevelDBOptions() {
             void *iData;
             int iDataLength;
             levelDBIteratorGetValue(iter, &iData, &iDataLength);
-            id v = (predicate == nil) ? nil : _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
+            id v = _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
             return v;
         };
         iterate(iKeyString, getter, &stop);
