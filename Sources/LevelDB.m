@@ -11,7 +11,7 @@
 
 #import "LevelDB.h"
 
-#import <leveldb/leveldb.h>
+#import <CLevelDB/CLevelDB.h>
 
 #include "Common.h"
 
