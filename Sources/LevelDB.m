@@ -115,7 +115,7 @@ LevelDBOptions MakeLevelDBOptions() {
     NSParameterAssert(value != nil);
     NSData *data = _encoder(key, value);
     
-    int status = levelDBItemPut(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [data bytes], [data length]);
+    NSInteger status = levelDBItemPut(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], [data bytes], [data length]);
     if (status) {
         NSLog(@"Problem storing key/value pair in database");
     }
@@ -135,13 +135,13 @@ LevelDBOptions MakeLevelDBOptions() {
 
 - (id)objectForKey:(NSString *)key {
     AssertDBExists(_db);
-    void *outData;
-    int outDataLength;
-    int status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
+    void *rawData;
+    NSInteger rawDataLength;
+    NSInteger status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &rawData, &rawDataLength);
     if (status != 0) {
         return nil;
     }
-    NSData *data = [NSData dataWithBytes:outData length:outDataLength];
+    NSData *data = [NSData dataWithBytes:rawData length:rawDataLength];
     return _decoder(key, data);
 }
 
@@ -162,13 +162,14 @@ LevelDBOptions MakeLevelDBOptions() {
 - (BOOL)objectExistsForKey:(NSString *)key {
     AssertDBExists(_db);
     
-    void *outData;
-    int outDataLength;
-    int status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &outData, &outDataLength);
-    if (status != 0) {
-        return false;
-    } else {
+    void *rawData;
+    NSInteger rawDataLength;
+    NSInteger status = levelDBItemGet(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding], &rawData, &rawDataLength);
+    if (status == 0) {
+        free(rawData);
         return true;
+    } else {
+        return false;
     }
 }
 
@@ -177,7 +178,7 @@ LevelDBOptions MakeLevelDBOptions() {
 - (void)removeObjectForKey:(NSString *)key {
     AssertDBExists(_db);
 
-    int status = levelDBItemDelete(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
+    NSInteger status = levelDBItemDelete(_db, [key UTF8String], [key lengthOfBytesUsingEncoding:NSUTF8StringEncoding]);
     if (status) {
         NSLog(@"Problem removing object with key: %@ in database", key);
     }
@@ -202,7 +203,7 @@ LevelDBOptions MakeLevelDBOptions() {
     
     for (_seekToFirstOrKey(iter, prefix); levelDBIteratorIsValid(iter); levelDBIteratorMoveForward(iter)) {
         char *iKey;
-        int iKeyLength;
+        NSInteger iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
         
         if (prefix && memcmp(iKey, prefixPtr, MIN(prefixLen, iKeyLength)) != 0) {
@@ -270,7 +271,7 @@ LevelDBOptions MakeLevelDBOptions() {
                 startingKey = key;
             }
         }
-        unsigned int len = startingKey.length;
+        NSUInteger len = startingKey.length;
  
         // If a prefix is provided and the iteration is backwards
         // we need to start on the next key (maybe discarding the first iteration)
@@ -301,7 +302,7 @@ LevelDBOptions MakeLevelDBOptions() {
                 return;
             }
             char *iKey;
-            int iKeyLength;
+            NSInteger iKeyLength;
             levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
             if (len > 0 && prefix != nil) {
                 signed int cmp = memcmp(iKey, [startingKey UTF8String], len);
@@ -350,14 +351,14 @@ LevelDBOptions MakeLevelDBOptions() {
     
     for ([self _startIterator:iter backward:backward prefix:prefix start:key]; levelDBIteratorIsValid(iter); _moveCursor(iter, backward)) {
         char *iKey;
-        int iKeyLength;
+        NSInteger iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
         if (prefix && memcmp(iKey, [prefix UTF8String], MIN((size_t)prefix.length, iKeyLength)) != 0) {
             break;
         }
         NSString *iKeyString = [[NSString alloc] initWithBytes:iKey length:iKeyLength encoding:NSUTF8StringEncoding];
         void *iData;
-        int iDataLength;
+        NSInteger iDataLength;
         levelDBIteratorGetValue(iter, &iData, &iDataLength);
         id v = (predicate == nil) ? nil : _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
         iterate(iKeyString, v, &stop);
@@ -409,7 +410,7 @@ LevelDBOptions MakeLevelDBOptions() {
     for ([self _startIterator:iter backward:backward prefix:prefix start:key]; levelDBIteratorIsValid(iter); _moveCursor(iter, backward)) {
         
         char *iKey;
-        int iKeyLength;
+        NSInteger iKeyLength;
         levelDBIteratorGetKey(iter, &iKey, &iKeyLength);
         if (prefix && memcmp(iKey, [prefix UTF8String], MIN((size_t)prefix.length, iKeyLength)) != 0) {
             break;
@@ -418,7 +419,7 @@ LevelDBOptions MakeLevelDBOptions() {
         
         getter = ^ id {
             void *iData;
-            int iDataLength;
+            NSInteger iDataLength;
             levelDBIteratorGetValue(iter, &iData, &iDataLength);
             id v = _decoder(iKeyString, [NSData dataWithBytes:iData length:iDataLength]);
             return v;
@@ -439,22 +440,6 @@ LevelDBOptions MakeLevelDBOptions() {
                                 andPrefix:nil
                                usingBlock:block];
 }
-
-/*
-- (void)enumerateKeysAndObjectsBackward:(BOOL)backward
-                                 lazily:(BOOL)lazily
-                          startingAtKey:(NSString *)key
-                    filteredByPredicate:(NSPredicate *)predicate
-                              andPrefix:(NSString *)prefix
-                             usingBlock:(id)block {
-    
-    [self enumerateKeysAndObjectsBackward:backward
-                                   lazily:lazily
-                            startingAtKey:key
-                      filteredByPredicate:predicate
-                                andPrefix:prefix
-                               usingBlock:block];
-}*/
 
 #pragma mark - Bookkeeping
 
