@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0C1FA58D1D6FA48A00E036EE /* CLevelDB.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C1FA58C1D6FA48A00E036EE /* CLevelDB.framework */; };
 		0C630E371D6A954A00CF3617 /* LevelDB.m in Sources */ = {isa = PBXBuildFile; fileRef = 0C630DF61D6A11CA00CF3617 /* LevelDB.m */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0C1FA58C1D6FA48A00E036EE /* CLevelDB.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CLevelDB.framework; path = "../../Library/Developer/Xcode/DerivedData/ObjectiveCLevelDBApp-etvagokslcuvqsffnnrzharvcdea/Build/Products/Debug-iphonesimulator/CLevelDB.framework"; sourceTree = "<group>"; };
 		0C630DF41D6A11CA00CF3617 /* Common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.h; path = Sources/Common.h; sourceTree = "<group>"; };
 		0C630DF51D6A11CA00CF3617 /* LevelDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LevelDB.h; path = Sources/LevelDB.h; sourceTree = "<group>"; };
 		0C630DF61D6A11CA00CF3617 /* LevelDB.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = LevelDB.m; path = Sources/LevelDB.m; sourceTree = "<group>"; };
@@ -34,12 +36,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0C1FA58D1D6FA48A00E036EE /* CLevelDB.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0C1FA58E1D6FA4C800E036EE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				0C1FA58C1D6FA48A00E036EE /* CLevelDB.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		0C630DF31D6A11AF00CF3617 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -53,6 +64,7 @@
 		0CFE5A5D1D6506B0005756D9 = {
 			isa = PBXGroup;
 			children = (
+				0C1FA58E1D6FA4C800E036EE /* Frameworks */,
 				0C630DF31D6A11AF00CF3617 /* Sources */,
 				0CFE5A671D6506B0005756D9 /* Products */,
 			);

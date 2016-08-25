@@ -41,16 +41,6 @@ NSString * const kLevelDBChangeTypeDelete   = @"del";
 NSString * const kLevelDBChangeValue        = @"value";
 NSString * const kLevelDBChangeKey          = @"key";
 
-/*
-LevelDBOptions MakeLevelDBOptions() {
-    return (LevelDBOptions) {true, true, false, false, true, 0, 0};
-}
- 
-@interface LevelDB()
-
-@end
-*/
-
 @implementation LevelDB
 
 @synthesize name=_name;
@@ -258,8 +248,8 @@ LevelDBOptions MakeLevelDBOptions() {
                prefix:(NSString *)prefix
                 start:(NSString *)key {
 
-    const void *prefixPtr;
-    size_t prefixLen;
+    //const void *prefixPtr;
+    //size_t prefixLen;
     NSString *startingKey;
     
     if (prefix) {
